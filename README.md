@@ -4,7 +4,7 @@
 [![Kubernetes](https://img.shields.io/badge/kubernetes-1.30.2-blue?logo=kubernetes)](https://kubernetes.io/)
 [![Cert Manager](https://img.shields.io/badge/cert--manager-1.15.2-blue?logo=cert-manager)](https://cert-manager.io/)
 
-![Alt text](https://raw.githubusercontent.com/ionos-cloud/cert-manager-webhook-ionos-cloud/main/.github/IONOS.CLOUD.BLU.svg)
+![Alt text](.github/IONOS.CLOUD.BLU.svg?raw=true)
 
 # IONOS Cloud DNS Webhook for cert-manager
 
