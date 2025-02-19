@@ -1,10 +1,12 @@
-# IONOS DNS Webhook Integration for Cert Manager
-
 [![GoTemplate](https://img.shields.io/badge/go/template-black?logo=go)](https://github.com/golang-standards/project-layout)
 [![Go](https://img.shields.io/badge/go-1.22.0-blue?logo=go)](https://golang.org/)
 [![Helm](https://img.shields.io/badge/helm-3.12.3-blue?logo=helm)](https://helm.sh/)
 [![Kubernetes](https://img.shields.io/badge/kubernetes-1.30.2-blue?logo=kubernetes)](https://kubernetes.io/)
 [![Cert Manager](https://img.shields.io/badge/cert--manager-1.15.2-blue?logo=cert-manager)](https://cert-manager.io/)
+
+![Alt text](https://raw.githubusercontent.com/ionos-cloud/cert-manager-webhook-ionos-cloud/main/.github/IONOS.CLOUD.BLU.svg)
+
+# IONOS Cloud DNS Webhook for cert-manager
 
 Facilitate a webhook integration for leveraging the IONOS Cloud DNS alongside
 its [API](https://ionos-cloud.github.io/rest-api/docs/dns/v1/) to act as a DNS01
