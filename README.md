@@ -8,9 +8,24 @@
 
 # IONOS Cloud DNS Webhook for cert-manager
 
-Facilitate a webhook integration for leveraging the IONOS Cloud DNS alongside
-its [API](https://ionos-cloud.github.io/rest-api/docs/dns/v1/) to act as a DNS01
-ACME Issuer with [cert-manager](https://cert-manager.io/docs/).
+This webhook allows you to utilize IONOS Cloud as a DNS provider for performing DNS-01 challenges when using [cert-manager](https://cert-manager.io/docs/).
+
+## Overview
+
+Cert-manager is a powerful Kubernetes add-on that automates the management and issuance of TLS certificates from various issuing sources. The IONOS Cloud Webhook extends cert-manager's capabilities to manage DNS challenges using IONOS Cloud's DNS services.
+
+## Features
+
+- Simplified integration with IONOS Cloud for DNS-01 challenges
+- Secure, automated DNS record management for certificate validation
+- Seamless issuance and renewal of TLS certificates
+
+## Prerequisites
+
+Before proceeding, ensure you have the following:
+- A Kubernetes cluster with cert-manager installed
+- An IONOS Cloud account with Cloud DNS API access
+- kubectl configured to access your Kubernetes cluster
 
 ## Usage
 
