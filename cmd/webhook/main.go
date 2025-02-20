@@ -2,25 +2,33 @@ package main
 
 import (
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
+	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/dnsclient"
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/resolver"
-	ionoscloud "github.com/ionos-cloud/sdk-go-dns"
+
 	"go.uber.org/zap"
 	"os"
 )
 
 // GroupName is the K8s API group.
 var GroupName = os.Getenv("GROUP_NAME")
+var IonosToken = os.Getenv("IONOS_TOKEN")
 
 func main() {
 	if GroupName == "" {
 		panic("GROUP_NAME must be specified")
 	}
 
+	if IonosToken == "" {
+		panic("IONOS_TOKEN must be specified")
+	}
+
 	logger, err := zap.NewProduction()
 	if err != nil {
 		panic(err)
 	}
-	dnsClient := ionoscloud.NewAPIClient(ionoscloud.NewConfigurationFromEnv())
+	config := dnsclient.NewConfiguration()
+	config.DefaultHeader["Authorization"] = "Bearer " + IonosToken
+	dnsClient := dnsclient.NewAPIClient(config)
 	logger.Info("Starting webhook server")
 
 	// This will register our custom DNS provider with the webhook serving

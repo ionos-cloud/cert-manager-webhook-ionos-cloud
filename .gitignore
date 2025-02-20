@@ -24,3 +24,5 @@ out/
 bin/
 cert-manager-webhook-*
 index.yaml
+
+.envrc
