@@ -48,14 +48,8 @@ type APIClient struct {
 	common service // Reuse a single struct instead of allocating one for each service on the heap.
 
 	// API Services
-
-	QuotaAPI QuotaAPI
-
 	RecordsAPI RecordsAPI
-
-	ZoneFilesAPI ZoneFilesAPI
-
-	ZonesAPI ZonesAPI
+	ZonesAPI   ZonesAPI
 }
 
 type service struct {
@@ -74,9 +68,7 @@ func NewAPIClient(cfg *Configuration) *APIClient {
 	c.common.client = c
 
 	// API Services
-	c.QuotaAPI = (*QuotaAPIService)(&c.common)
 	c.RecordsAPI = (*RecordsAPIService)(&c.common)
-	c.ZoneFilesAPI = (*ZoneFilesAPIService)(&c.common)
 	c.ZonesAPI = (*ZonesAPIService)(&c.common)
 
 	return c
