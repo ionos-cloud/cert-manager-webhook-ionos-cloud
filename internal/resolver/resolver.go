@@ -125,8 +125,7 @@ func (s *ionosCloudDnsProviderResolver) findOrCreateZone(ch *v1alpha1.ChallengeR
 }
 
 func (s *ionosCloudDnsProviderResolver) findOrCreateRecord(ch *v1alpha1.ChallengeRequest, zoneId string) error {
-	// fetch record
-	recordName := strings.TrimSuffix(ch.ResolvedFQDN, ch.ResolvedZone)
+	recordName := strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone)
 	s.logger.Debug("try to find txt record...", zap.String("recordName", recordName), zap.String("fqdn", ch.ResolvedFQDN), zap.String("zoneId", zoneId))
 	recordList, resp, err := s.client.RecordsAPI.RecordsGet(s.ctx).FilterZoneId(zoneId).FilterName(recordName).FilterType(typeTxtRecord).Execute()
 	if err != nil {
