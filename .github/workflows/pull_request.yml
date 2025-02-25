@@ -28,7 +28,7 @@ jobs:
         with:
           go-version: stable
       - name: Run Unit Tests
-        run: make test-report
+        run: make unit-test
       - name: Test Report
         uses: dorny/test-reporter@v1
         if: success() || failure()
