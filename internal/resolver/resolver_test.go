@@ -2,6 +2,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/dnsclient"
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/dnsclient/mocks"
@@ -46,7 +47,7 @@ func (s *ResolverTestSuite) SetupSuite() {
 	s.logger = logger
 }
 
-func (s *ResolverTestSuite) SetupTest() {
+func (s *ResolverTestSuite) setupMocks() {
 	zonesAPIMock := mocks.NewZonesAPI(s.T())
 	recordsAPIMock := mocks.NewRecordsAPI(s.T())
 	s.apiClient = &dnsclient.APIClient{
@@ -121,9 +122,133 @@ func (s *ResolverTestSuite) TestPresent() {
 			thenRecordCreate: dnsclient.NewRecordCreate(*dnsclient.NewRecord("_acme-challenge", typeTxtRecord,
 				"test-key")),
 		},
+		{
+			name: "zone already exists",
+			givenZones: []dnsclient.ZoneRead{
+				{
+					Id: "test-zone-id",
+					Properties: dnsclient.Zone{
+						ZoneName: "test.com",
+					},
+					Type: "NATIVE",
+				},
+			},
+			givenRecords: []dnsclient.RecordRead{},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			thenRecordCreate: dnsclient.NewRecordCreate(*dnsclient.NewRecord("_acme-challenge", typeTxtRecord,
+				"test-key")),
+		},
+		{
+			name: "record with the same name already exists",
+			givenZones: []dnsclient.ZoneRead{
+				{
+					Id: "test-zone-id",
+					Properties: dnsclient.Zone{
+						ZoneName: "test.com",
+					},
+					Type: "NATIVE",
+				},
+			},
+			givenRecords: []dnsclient.RecordRead{
+				{
+					Id: "test-record-id",
+					Properties: dnsclient.Record{
+						Name:    "_acme-challenge",
+						Type:    typeTxtRecord,
+						Content: "test-key",
+					},
+				},
+			},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+		},
+		{
+			name:               "error fetching zones",
+			givenZones:         []dnsclient.ZoneRead{},
+			whenZonesReadError: fmt.Errorf("error fetching zones"),
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			thenError: "error fetching zones",
+		},
+		{
+			name:                "error creating zone",
+			givenZones:          []dnsclient.ZoneRead{},
+			whenZoneCreateError: fmt.Errorf("error creating zone"),
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+			},
+			thenZoneCreate: dnsclient.NewZoneCreate(*dnsclient.NewZone("test.com")),
+			thenError:      "error creating zone",
+		},
+		{
+			name: "error fetching records",
+			givenZones: []dnsclient.ZoneRead{
+				{
+					Id: "test-zone-id",
+					Properties: dnsclient.Zone{
+						ZoneName: "test.com",
+					},
+					Type: "NATIVE",
+				},
+			},
+			givenRecords:         []dnsclient.RecordRead{},
+			whenRecordsReadError: fmt.Errorf("error fetching records"),
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			thenError: "error fetching records",
+		},
+		{
+			name: "error creating record",
+			givenZones: []dnsclient.ZoneRead{
+				{
+					Id: "test-zone-id",
+					Properties: dnsclient.Zone{
+						ZoneName: "test.com",
+					},
+					Type: "NATIVE",
+				},
+			},
+			givenRecords:          []dnsclient.RecordRead{},
+			whenRecordCreateError: fmt.Errorf("error creating record"),
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			thenRecordCreate: dnsclient.NewRecordCreate(*dnsclient.NewRecord("_acme-challenge", typeTxtRecord,
+				"test-key")),
+			thenError: "error creating record",
+		},
 	}
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
+			s.setupMocks()
 			if tc.givenZones != nil {
 				apiZonesGetRequest := s.apiZonesGetRequest()
 				s.zonesAPIMock().EXPECT().ZonesGet(context.Background()).Return(apiZonesGetRequest)
