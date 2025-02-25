@@ -34,7 +34,7 @@ jobs:
         if: success() || failure()
         with:
           name: Unit Test Results
-          path: ./out/report.json
+          path: ./out/report.xml
           reporter: java-junit
           fail-on-error: 'true'
       - name: Upload Reports
@@ -42,7 +42,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unit-test-reports
-          path: ./out/report.json
+          path: ./out/report.xml
 
       - name: Set Up Docker Buildx
         uses: docker/setup-buildx-action@v3
