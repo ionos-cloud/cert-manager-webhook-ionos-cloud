@@ -57,13 +57,14 @@ test: ## Run unit tests
 test-coverage: out ## Run unit tests with coverage
 	go test -race ./... -coverprofile=out/cover.out
 
-.PHONY: out/report.json
-out/report.json: out ## Run unit tests with coverage and generate json report
-	go test -race ./... -coverprofile=out/cover.out --json | tee "$(@)"
-
 .PHONY: html-coverage
 html-coverage: out/report.json ## Generate html coverage report
 	go tool cover -html=out/cover.out
+
+.PHONY: test-report
+test-report: out ## Run unit tests with coverage and generate json report
+	go test -race -json ./... -coverprofile=out/cover.out | tee out/report.json
+
 
 .PHONY: run
 run: ## Run the application
