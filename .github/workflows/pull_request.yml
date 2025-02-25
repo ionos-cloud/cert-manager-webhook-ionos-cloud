@@ -35,7 +35,7 @@ jobs:
         with:
           name: Unit Test Results
           path: ./out/report.json
-          reporter: java-junit
+          reporter: go-test
           fail-on-error: 'true'
       - name: Upload Reports
         if: always()
