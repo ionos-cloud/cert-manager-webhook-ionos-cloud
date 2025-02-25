@@ -3,8 +3,9 @@ package resolver
 import (
 	"context"
 	"errors"
-	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/dnsclient"
-	"net/http"
+	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns"
+	dnsclient "github.com/ionos-cloud/sdk-go-dns"
+	"k8s.io/utils/ptr"
 	"strings"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook"
@@ -13,9 +14,9 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-const typeTxtRecord = "TXT"
+var typeTxtRecord = ptr.To(dnsclient.RecordType("TXT"))
 
-func NewResolver(client *dnsclient.APIClient, logger *zap.Logger) webhook.Solver {
+func NewResolver(client clouddns.DNSAPI, logger *zap.Logger) webhook.Solver {
 	return &ionosCloudDnsProviderResolver{
 		ctx:    context.Background(),
 		client: client,
@@ -25,7 +26,7 @@ func NewResolver(client *dnsclient.APIClient, logger *zap.Logger) webhook.Solver
 
 type ionosCloudDnsProviderResolver struct {
 	ctx    context.Context
-	client *dnsclient.APIClient
+	client clouddns.DNSAPI
 	logger *zap.Logger
 }
 
@@ -86,78 +87,64 @@ func (s *ionosCloudDnsProviderResolver) Initialize(kubeClientConfig *rest.Config
 func (s *ionosCloudDnsProviderResolver) findOrCreateZone(ch *v1alpha1.ChallengeRequest, mustFind bool) (string, error) {
 	// fetch zone
 	zoneName := strings.TrimSuffix(ch.ResolvedZone, ".")
-	s.logger.Debug("try to find zone...", zap.String("zoneName", zoneName))
-	zoneList, resp, err := s.client.ZonesAPI.ZonesGet(s.ctx).FilterZoneName(zoneName).Execute()
+	s.logger.Debug("find zone...", zap.String("zoneName", zoneName))
+	zoneList, err := s.client.GetZones(zoneName)
 	if err != nil {
 		s.logger.Error("Error fetching zone", zap.Error(err))
 		return "", err
 	}
-	if resp.StatusCode != http.StatusOK {
-		s.logger.Error("Error fetching zone", zap.Int("statusCode", resp.StatusCode))
-		return "", errors.New("error fetching zone")
-	}
-	if len(zoneList.Items) == 0 {
+	if zoneList.Items == nil || len(*zoneList.Items) == 0 {
 		if mustFind {
 			s.logger.Error("Error fetching zone, zone not found", zap.String("zoneName", zoneName))
 			return "", errors.New("error fetching zone")
 		}
 		s.logger.Debug("zone not found, try to create...", zap.String("zoneName", zoneName))
-		zoneCreate := *dnsclient.NewZoneCreate(*dnsclient.NewZone(zoneName)) // ZoneCreate | zone
-		zone, resp, err := s.client.ZonesAPI.ZonesPost(context.Background()).ZoneCreate(zoneCreate).Execute()
+		zone, err := s.client.CreateZone(zoneName)
 		if err != nil {
 			s.logger.Error("Error creating zone", zap.Error(err))
 			return "", err
 		}
-		if resp.StatusCode != http.StatusCreated {
-			s.logger.Error("Error creating zone", zap.Int("statusCode", resp.StatusCode))
-			return "", errors.New("error creating zone")
-		}
-		s.logger.Info("zone created", zap.String("zoneName", zoneName), zap.String("zoneId", zone.Id))
-		return zone.Id, nil
+		s.logger.Info("zone created", zap.String("zoneName", zoneName), zap.String("zoneId", *zone.Id))
+		return *zone.Id, nil
 	}
-	if len(zoneList.Items) > 1 {
-		s.logger.Error("Error fetching zone, zone not unique", zap.Int("zoneCount", len(zoneList.Items)))
+	if len(*zoneList.Items) > 1 {
+		s.logger.Error("Error fetching zone, zone not unique", zap.Int("zoneCount", len(*zoneList.Items)))
 		return "", errors.New("error fetching zone")
 	}
-	zone := (zoneList.Items)[0]
-	s.logger.Info("zone found", zap.String("zoneName", zoneName), zap.String("zoneId", zone.Id))
-	return zone.Id, nil
+	zone := (*zoneList.Items)[0]
+	s.logger.Info("zone found", zap.String("zoneName", zoneName), zap.String("zoneId", *zone.Id))
+	return *zone.Id, nil
 }
 
 func (s *ionosCloudDnsProviderResolver) findOrCreateRecord(ch *v1alpha1.ChallengeRequest, zoneId string) error {
 	recordName := strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone)
-	s.logger.Debug("try to find txt record...", zap.String("recordName", recordName), zap.String("fqdn", ch.ResolvedFQDN), zap.String("zoneId", zoneId))
-	recordList, resp, err := s.client.RecordsAPI.RecordsGet(s.ctx).FilterZoneId(zoneId).FilterName(recordName).FilterType(typeTxtRecord).Execute()
+	s.logger.Debug("find txt record...", zap.String("recordName", recordName), zap.String("fqdn", ch.ResolvedFQDN),
+		zap.String("zoneId", zoneId))
+	recordList, err := s.client.GetRecords(zoneId, recordName)
 	if err != nil {
 		s.logger.Error("Error fetching record", zap.Error(err))
 		return err
 	}
-	if resp.StatusCode != http.StatusOK {
-		s.logger.Error("Error fetching record", zap.Int("statusCode", resp.StatusCode))
-		return errors.New("error fetching record")
-	}
-	if len(recordList.Items) > 1 {
-		s.logger.Error("Error fetching record, record not unique", zap.Int("recordCount", len(recordList.Items)),
-			zap.String("recordName", recordName))
-		return errors.New("error fetching record")
-	}
-	if len(recordList.Items) == 0 {
+	if recordList.Items == nil || len(*recordList.Items) == 0 {
 		s.logger.Debug("record not found, try to create record...", zap.String("recordName", recordName), zap.String("key", ch.Key),
 			zap.String("zoneId", zoneId))
-		recordCreate := *dnsclient.NewRecordCreate(*dnsclient.NewRecord(recordName, typeTxtRecord, ch.Key)) // RecordCreate | record
-		record, resp, err := s.client.RecordsAPI.ZonesRecordsPost(s.ctx, zoneId).RecordCreate(recordCreate).Execute()
+		record, err := s.client.CreateTXTRecord(zoneId, recordName, ch.Key)
 		if err != nil {
 			s.logger.Error("Error creating record", zap.Error(err))
 			return err
 		}
-		if resp.StatusCode != http.StatusCreated {
-			s.logger.Error("Error creating record", zap.Int("statusCode", resp.StatusCode))
-			return errors.New("error creating record")
-		}
-		s.logger.Info("record for dns challenge successfully created", zap.String("recordId", record.Id))
+		s.logger.Info("record for dns challenge successfully created", zap.String("recordId", *record.Id),
+			zap.String("recordName", recordName), zap.String("zoneId", zoneId))
 		return nil
 	}
-	s.logger.Info("record found", zap.String("recordName", recordName), zap.String("recordId", recordList.Items[0].Id))
+	if len(*recordList.Items) > 1 {
+		s.logger.Error("Error fetching record, record not unique", zap.Int("recordCount", len(*recordList.Items)),
+			zap.String("recordName", recordName))
+		return errors.New("error fetching record")
+	}
+	record := (*recordList.Items)[0]
+	s.logger.Info("record found", zap.String("recordName", recordName), zap.String("recordId", *record.Id),
+		zap.String("zoneId", zoneId))
 	return nil
 }
 
@@ -165,35 +152,27 @@ func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeReque
 	// fetch record
 	recordName := strings.TrimSuffix(ch.ResolvedFQDN, ch.ResolvedZone)
 	s.logger.Debug("try to find txt record...", zap.String("recordName", recordName), zap.String("fqdn", ch.ResolvedFQDN), zap.String("zoneId", zoneId))
-	recordList, resp, err := s.client.RecordsAPI.RecordsGet(s.ctx).FilterZoneId(zoneId).FilterName(recordName).FilterType(typeTxtRecord).Execute()
+	recordList, err := s.client.GetRecords(zoneId, recordName)
 	if err != nil {
 		s.logger.Error("Error fetching record", zap.Error(err))
 		return err
 	}
-	if resp.StatusCode != http.StatusOK {
-		s.logger.Error("Error fetching record", zap.Int("statusCode", resp.StatusCode))
-		return errors.New("error fetching record")
-	}
-	if len(recordList.Items) > 1 {
-		s.logger.Error("Error fetching record, record not unique", zap.Int("recordCount", len(recordList.Items)),
-			zap.String("recordName", recordName))
-		return errors.New("error fetching record")
-	}
-	if len(recordList.Items) == 0 {
+	if recordList.Items == nil || len(*recordList.Items) == 0 {
 		s.logger.Info("record not found, nothing to clean up", zap.String("recordName", recordName))
 		return nil
 	}
-	record := (recordList.Items)[0]
-	s.logger.Info("record found, try to delete...", zap.String("recordName", recordName), zap.String("recordId", record.Id))
-	_, resp, err = s.client.RecordsAPI.ZonesRecordsDelete(s.ctx, zoneId, record.Id).Execute()
+	if len(*recordList.Items) > 1 {
+		s.logger.Error("Error fetching record, record not unique", zap.Int("recordCount", len(*recordList.Items)),
+			zap.String("recordName", recordName))
+		return errors.New("error fetching record")
+	}
+	record := (*recordList.Items)[0]
+	s.logger.Info("record found, try to delete...", zap.String("recordName", recordName), zap.String("recordId", *record.Id))
+	err = s.client.DeleteRecord(zoneId, *record.Id)
 	if err != nil {
 		s.logger.Error("Error deleting record", zap.Error(err))
 		return err
 	}
-	if resp.StatusCode != http.StatusNoContent {
-		s.logger.Error("Error deleting record", zap.Int("statusCode", resp.StatusCode))
-		return errors.New("error deleting record")
-	}
-	s.logger.Info("record successfully deleted", zap.String("recordId", record.Id))
+	s.logger.Info("record successfully deleted", zap.String("recordId", *record.Id))
 	return nil
 }

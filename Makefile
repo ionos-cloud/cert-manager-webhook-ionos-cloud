@@ -34,7 +34,7 @@ download: ## Download dependencies
 clean:
 	rm -rf ./bin
 	rm -rf ./out
-	rm -rf ./internal/dnsclient/mocks
+	rm -rf ./internal/clouddns/mocks
 
 
 ##@ Development cycle
@@ -45,8 +45,7 @@ $(MOCKERY):
 
 .PHONY: generate-mocks
 generate-mocks: $(MOCKERY) ## Generate mocks
-	bin/mockery --name ZonesAPI --output internal/dnsclient/mocks --recursive
-	bin/mockery --name RecordsAPI --output internal/dnsclient/mocks --recursive
+	bin/mockery --name DNSAPI --output internal/clouddns/mocks --recursive
 
 .PHONY: build
 build: ## Build the binary
