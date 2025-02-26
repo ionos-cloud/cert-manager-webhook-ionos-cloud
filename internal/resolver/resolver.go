@@ -49,7 +49,7 @@ func (s *ionosCloudDnsProviderResolver) Present(ch *v1alpha1.ChallengeRequest) e
 	s.logger.Debug("Received dns challenge request", zap.String("uid", string(ch.UID)), zap.String("key", ch.Key),
 		zap.String("dnsName", ch.DNSName), zap.String("resolvedZone", ch.ResolvedZone), zap.String("resolvedFQDN",
 			ch.ResolvedFQDN))
-	zoneId, err := s.findOrCreateZone(ch, false)
+	zoneId, err := s.findOrCreateZone(ch, true)
 	if err != nil {
 		return err
 	}
@@ -63,9 +63,13 @@ func (s *ionosCloudDnsProviderResolver) Present(ch *v1alpha1.ChallengeRequest) e
 // This is in order to facilitate multiple DNS validations for the same domain
 // concurrently.
 func (s *ionosCloudDnsProviderResolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
-	zoneId, err := s.findOrCreateZone(ch, true)
+	zoneId, err := s.findOrCreateZone(ch, false)
 	if err != nil {
 		return err
+	}
+	if zoneId == "" {
+		s.logger.Info("zone not found, nothing to clean up", zap.String("zoneName", ch.ResolvedZone))
+		return nil
 	}
 	return s.deleteRecord(ch, zoneId)
 }
@@ -84,9 +88,9 @@ func (s *ionosCloudDnsProviderResolver) Initialize(kubeClientConfig *rest.Config
 	return nil
 }
 
-func (s *ionosCloudDnsProviderResolver) findOrCreateZone(ch *v1alpha1.ChallengeRequest, mustFind bool) (string, error) {
+func (s *ionosCloudDnsProviderResolver) findOrCreateZone(ch *v1alpha1.ChallengeRequest, create bool) (string, error) {
 	// fetch zone
-	zoneName := strings.TrimSuffix(ch.ResolvedZone, ".")
+	zoneName := zoneNameFromChallenge(ch)
 	s.logger.Debug("find zone...", zap.String("zoneName", zoneName))
 	zoneList, err := s.client.GetZones(zoneName)
 	if err != nil {
@@ -94,18 +98,16 @@ func (s *ionosCloudDnsProviderResolver) findOrCreateZone(ch *v1alpha1.ChallengeR
 		return "", err
 	}
 	if zoneList.Items == nil || len(*zoneList.Items) == 0 {
-		if mustFind {
-			s.logger.Error("Error fetching zone, zone not found", zap.String("zoneName", zoneName))
-			return "", errors.New("error fetching zone")
+		if create {
+			zone, err := s.client.CreateZone(zoneName)
+			if err != nil {
+				s.logger.Error("Error creating zone", zap.Error(err))
+				return "", err
+			}
+			s.logger.Info("zone created", zap.String("zoneName", zoneName), zap.String("zoneId", *zone.Id))
+			return *zone.Id, nil
 		}
-		s.logger.Debug("zone not found, try to create...", zap.String("zoneName", zoneName))
-		zone, err := s.client.CreateZone(zoneName)
-		if err != nil {
-			s.logger.Error("Error creating zone", zap.Error(err))
-			return "", err
-		}
-		s.logger.Info("zone created", zap.String("zoneName", zoneName), zap.String("zoneId", *zone.Id))
-		return *zone.Id, nil
+		return "", nil
 	}
 	if len(*zoneList.Items) > 1 {
 		s.logger.Error("Error fetching zone, zone not unique", zap.Int("zoneCount", len(*zoneList.Items)))
@@ -117,7 +119,7 @@ func (s *ionosCloudDnsProviderResolver) findOrCreateZone(ch *v1alpha1.ChallengeR
 }
 
 func (s *ionosCloudDnsProviderResolver) findOrCreateRecord(ch *v1alpha1.ChallengeRequest, zoneId string) error {
-	recordName := strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone)
+	recordName := recordNameFromChallenge(ch)
 	s.logger.Debug("find txt record...", zap.String("recordName", recordName), zap.String("fqdn", ch.ResolvedFQDN),
 		zap.String("zoneId", zoneId))
 	recordList, err := s.client.GetRecords(zoneId, recordName)
@@ -149,8 +151,7 @@ func (s *ionosCloudDnsProviderResolver) findOrCreateRecord(ch *v1alpha1.Challeng
 }
 
 func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeRequest, zoneId string) error {
-	// fetch record
-	recordName := strings.TrimSuffix(ch.ResolvedFQDN, ch.ResolvedZone)
+	recordName := recordNameFromChallenge(ch)
 	s.logger.Debug("try to find txt record...", zap.String("recordName", recordName), zap.String("fqdn", ch.ResolvedFQDN), zap.String("zoneId", zoneId))
 	recordList, err := s.client.GetRecords(zoneId, recordName)
 	if err != nil {
@@ -158,21 +159,38 @@ func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeReque
 		return err
 	}
 	if recordList.Items == nil || len(*recordList.Items) == 0 {
-		s.logger.Info("record not found, nothing to clean up", zap.String("recordName", recordName))
+		s.logger.Info("no record with that name found, nothing to clean up", zap.String("recordName", recordName),
+			zap.String("zoneId", zoneId))
 		return nil
 	}
-	if len(*recordList.Items) > 1 {
-		s.logger.Error("Error fetching record, record not unique", zap.Int("recordCount", len(*recordList.Items)),
-			zap.String("recordName", recordName))
-		return errors.New("error fetching record")
+	var record *dnsclient.RecordRead
+	for _, r := range *recordList.Items {
+		content := r.GetProperties().GetContent()
+		if content != nil && *content == ch.Key {
+			record = &r
+			break
+		}
 	}
-	record := (*recordList.Items)[0]
-	s.logger.Info("record found, try to delete...", zap.String("recordName", recordName), zap.String("recordId", *record.Id))
+	if record == nil {
+		s.logger.Info("record with that name found, but key differs, nothing to clean up",
+			zap.String("recordName", recordName), zap.String("zoneId", zoneId))
+		return nil
+	}
+	s.logger.Info("record found, deleting...", zap.String("recordName", recordName), zap.String("recordId", *record.Id))
 	err = s.client.DeleteRecord(zoneId, *record.Id)
 	if err != nil {
 		s.logger.Error("Error deleting record", zap.Error(err))
 		return err
 	}
-	s.logger.Info("record successfully deleted", zap.String("recordId", *record.Id))
+	s.logger.Info("record successfully deleted", zap.String("recordId", *record.Id), zap.String("recordName", recordName),
+		zap.String("zoneId", zoneId))
 	return nil
+}
+
+func recordNameFromChallenge(ch *v1alpha1.ChallengeRequest) string {
+	return strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone)
+}
+
+func zoneNameFromChallenge(ch *v1alpha1.ChallengeRequest) string {
+	return strings.TrimSuffix(ch.ResolvedZone, ".")
 }
