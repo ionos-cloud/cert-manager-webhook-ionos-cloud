@@ -103,6 +103,19 @@ Before proceeding, ensure you have the following:
 
 ## Contribute
 
+## Verify the image resource integrity
+
+All official webhooks provided by IONOS are signed using [Cosign](https://docs.sigstore.dev/cosign/overview/).
+The Cosign public key can be found in the [cosign.pub](./cosign.pub) file.
+
+Note: Due to the early development stage of the webhook, the image is not yet signed
+by [sigstores transparency log](https://github.com/sigstore/rekor).
+
+```shell
+export RELEASE_VERSION=latest
+cosign verify --insecure-ignore-tlog --key cosign.pub ghcr.io/ionos-cloud/cert-manager-webhook-ionos-cloud:$RELEASE_VERSION
+```
+
 ### Development Workflow
 
 Check out the [make targets](https://www.gnu.org/software/make/manual/make.html) for the development cycle:

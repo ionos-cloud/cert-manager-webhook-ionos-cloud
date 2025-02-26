@@ -49,20 +49,14 @@ generate: $(MOCKERY) ## Generate mocks
 build: ## Build the binary
 	CGO_ENABLED=0 go build -ldflags "-s -w" -o ./bin/cert-manager-webhook-ionos-cloud -v cmd/webhook/main.go
 
-.PHONY: test
-test: ## Run unit tests
-	go test -race ./...
 
-.PHONY: test-coverage
-test-coverage: out ## Run unit tests with coverage
-	go test -race ./... -coverprofile=out/cover.out
-
-.PHONY: out/report.json
-out/report.json: out ## Run unit tests with coverage and generate json report
-	go test -race ./... -coverprofile=out/cover.out --json | tee "$(@)"
+GO_TEST = go tool gotest.tools/gotestsum --format pkgname
+.PHONY: unit-test
+unit-test: out ## Run unit tests with coverage and generate json report
+	$(GO_TEST) --junitfile out/report.xml -- -race ./... -count=1 -short -cover -coverprofile=out/cover.out
 
 .PHONY: html-coverage
-html-coverage: out/report.json ## Generate html coverage report
+html-coverage: out/report.xml ## Generate html coverage report
 	go tool cover -html=out/cover.out
 
 .PHONY: run
