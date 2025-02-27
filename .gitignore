@@ -1,5 +1,0 @@
-.idea
-bin/
-out/
-cert-manager-webhook-*
-.envrc
