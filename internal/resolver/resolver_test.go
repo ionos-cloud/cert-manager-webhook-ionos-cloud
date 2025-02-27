@@ -41,17 +41,14 @@ func (s *ResolverTestSuite) TestPresent() {
 		givenRecords          []dnsclient.RecordRead
 		whenChallenge         *v1alpha1.ChallengeRequest
 		whenZonesReadError    error
-		whenZoneCreateError   error
 		whenRecordsReadError  error
 		whenRecordCreateError error
 		thenError             string
-		thenZoneCreate        bool
 		thenRecordCreateKey   string
 	}{
 		{
-			name:         "no zones",
-			givenZones:   []dnsclient.ZoneRead{},
-			givenRecords: []dnsclient.RecordRead{},
+			name:       "no zones",
+			givenZones: []dnsclient.ZoneRead{},
 			whenChallenge: &v1alpha1.ChallengeRequest{
 				UID:          "test-UID",
 				Key:          "test-key",
@@ -59,8 +56,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenZoneCreate:      true,
-			thenRecordCreateKey: "test-key",
+			thenError: "zone 'test.com' not found",
 		},
 		{
 			name: "zone already exists",
@@ -81,11 +77,10 @@ func (s *ResolverTestSuite) TestPresent() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenZoneCreate:      false,
 			thenRecordCreateKey: "test-key",
 		},
 		{
-			name: "record with the same name already exists",
+			name: "record with the same name and key already exists",
 			givenZones: []dnsclient.ZoneRead{
 				{
 					Id: ptr.To("test-zone-id"),
@@ -112,8 +107,37 @@ func (s *ResolverTestSuite) TestPresent() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenZoneCreate:      false,
 			thenRecordCreateKey: "", // no record should be created
+		},
+		{
+			name: "record with the same name but different key already exists",
+			givenZones: []dnsclient.ZoneRead{
+				{
+					Id: ptr.To("test-zone-id"),
+					Properties: &dnsclient.Zone{
+						ZoneName: ptr.To("test.com"),
+					},
+					Type: ptr.To("NATIVE"),
+				},
+			},
+			givenRecords: []dnsclient.RecordRead{
+				{
+					Id: ptr.To("test-record-id"),
+					Properties: &dnsclient.Record{
+						Name:    ptr.To("_acme-challenge"),
+						Type:    typeTxtRecord,
+						Content: ptr.To("different-key"),
+					},
+				},
+			},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			thenRecordCreateKey: "test-key",
 		},
 		{
 			name:               "error fetching zones",
@@ -127,19 +151,6 @@ func (s *ResolverTestSuite) TestPresent() {
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenError: "error fetching zones",
-		},
-		{
-			name:                "error creating zone",
-			givenZones:          []dnsclient.ZoneRead{},
-			whenZoneCreateError: fmt.Errorf("error creating zone"),
-			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-			},
-			thenZoneCreate: true,
-			thenError:      "error creating zone",
 		},
 		{
 			name: "error fetching records",
@@ -196,11 +207,6 @@ func (s *ResolverTestSuite) TestPresent() {
 					Items: &tc.givenZones,
 				}
 				s.dnsAPIMock.EXPECT().GetZones(zoneName).Return(zoneReadList, tc.whenZonesReadError)
-			}
-			if tc.thenZoneCreate {
-				s.dnsAPIMock.EXPECT().CreateZone(zoneName).Return(dnsclient.ZoneRead{
-					Id: ptr.To("test-zone-id"),
-				}, tc.whenZoneCreateError)
 			}
 			if tc.givenRecords != nil {
 				recordName := strings.TrimSuffix(tc.whenChallenge.ResolvedFQDN, "."+tc.whenChallenge.ResolvedZone)

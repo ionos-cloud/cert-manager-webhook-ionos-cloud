@@ -2,7 +2,7 @@ package resolver
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns"
 	dnsclient "github.com/ionos-cloud/sdk-go-dns"
 	"k8s.io/utils/ptr"
@@ -49,7 +49,7 @@ func (s *ionosCloudDnsProviderResolver) Present(ch *v1alpha1.ChallengeRequest) e
 	s.logger.Debug("Received dns challenge request", zap.String("uid", string(ch.UID)), zap.String("key", ch.Key),
 		zap.String("dnsName", ch.DNSName), zap.String("resolvedZone", ch.ResolvedZone), zap.String("resolvedFQDN",
 			ch.ResolvedFQDN))
-	zoneId, err := s.findOrCreateZone(ch, true)
+	zoneId, err := s.findZone(ch, true)
 	if err != nil {
 		return err
 	}
@@ -63,7 +63,7 @@ func (s *ionosCloudDnsProviderResolver) Present(ch *v1alpha1.ChallengeRequest) e
 // This is in order to facilitate multiple DNS validations for the same domain
 // concurrently.
 func (s *ionosCloudDnsProviderResolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
-	zoneId, err := s.findOrCreateZone(ch, false)
+	zoneId, err := s.findZone(ch, false)
 	if err != nil {
 		return err
 	}
@@ -88,7 +88,7 @@ func (s *ionosCloudDnsProviderResolver) Initialize(kubeClientConfig *rest.Config
 	return nil
 }
 
-func (s *ionosCloudDnsProviderResolver) findOrCreateZone(ch *v1alpha1.ChallengeRequest, create bool) (string, error) {
+func (s *ionosCloudDnsProviderResolver) findZone(ch *v1alpha1.ChallengeRequest, shouldFind bool) (string, error) {
 	// fetch zone
 	zoneName := zoneNameFromChallenge(ch)
 	s.logger.Debug("find zone...", zap.String("zoneName", zoneName))
@@ -98,20 +98,11 @@ func (s *ionosCloudDnsProviderResolver) findOrCreateZone(ch *v1alpha1.ChallengeR
 		return "", err
 	}
 	if zoneList.Items == nil || len(*zoneList.Items) == 0 {
-		if create {
-			zone, err := s.client.CreateZone(zoneName)
-			if err != nil {
-				s.logger.Error("Error creating zone", zap.Error(err))
-				return "", err
-			}
-			s.logger.Info("zone created", zap.String("zoneName", zoneName), zap.String("zoneId", *zone.Id))
-			return *zone.Id, nil
+		s.logger.Info("zone not found", zap.String("zoneName", zoneName))
+		if shouldFind {
+			return "", fmt.Errorf("zone '%s' not found", zoneName)
 		}
 		return "", nil
-	}
-	if len(*zoneList.Items) > 1 {
-		s.logger.Error("Error fetching zone, zone not unique", zap.Int("zoneCount", len(*zoneList.Items)))
-		return "", errors.New("error fetching zone")
 	}
 	zone := (*zoneList.Items)[0]
 	s.logger.Info("zone found", zap.String("zoneName", zoneName), zap.String("zoneId", *zone.Id))
@@ -127,26 +118,24 @@ func (s *ionosCloudDnsProviderResolver) findOrCreateRecord(ch *v1alpha1.Challeng
 		s.logger.Error("Error fetching record", zap.Error(err))
 		return err
 	}
-	if recordList.Items == nil || len(*recordList.Items) == 0 {
-		s.logger.Debug("record not found, try to create record...", zap.String("recordName", recordName), zap.String("key", ch.Key),
-			zap.String("zoneId", zoneId))
-		record, err := s.client.CreateTXTRecord(zoneId, recordName, ch.Key)
-		if err != nil {
-			s.logger.Error("Error creating record", zap.Error(err))
-			return err
+	// check if record already exists
+	for _, r := range *recordList.Items {
+		content := r.GetProperties().GetContent()
+		if content != nil && *content == ch.Key {
+			s.logger.Info("record for dns challenge already exists", zap.String("recordId", *r.Id),
+				zap.String("recordName", recordName), zap.String("zoneId", zoneId))
+			return nil
 		}
-		s.logger.Info("record for dns challenge successfully created", zap.String("recordId", *record.Id),
-			zap.String("recordName", recordName), zap.String("zoneId", zoneId))
-		return nil
 	}
-	if len(*recordList.Items) > 1 {
-		s.logger.Error("Error fetching record, record not unique", zap.Int("recordCount", len(*recordList.Items)),
-			zap.String("recordName", recordName))
-		return errors.New("error fetching record")
-	}
-	record := (*recordList.Items)[0]
-	s.logger.Info("record found", zap.String("recordName", recordName), zap.String("recordId", *record.Id),
+	s.logger.Debug("record not found, try to create record...", zap.String("recordName", recordName), zap.String("key", ch.Key),
 		zap.String("zoneId", zoneId))
+	record, err := s.client.CreateTXTRecord(zoneId, recordName, ch.Key)
+	if err != nil {
+		s.logger.Error("Error creating record", zap.Error(err))
+		return err
+	}
+	s.logger.Info("record for dns challenge successfully created", zap.String("recordId", *record.Id),
+		zap.String("recordName", recordName), zap.String("zoneId", zoneId))
 	return nil
 }
 
