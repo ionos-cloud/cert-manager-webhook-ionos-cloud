@@ -11,8 +11,10 @@ replace sigs.k8s.io/structured-merge-diff/v4 => sigs.k8s.io/structured-merge-dif
 require (
 	github.com/cert-manager/cert-manager v1.17.1
 	github.com/ionos-cloud/sdk-go-dns v1.4.0
+	github.com/stretchr/testify v1.10.0
 	go.uber.org/zap v1.27.0
 	k8s.io/client-go v0.32.2
+	k8s.io/utils v0.0.0-20241210054802-24370beab758
 )
 
 require (
@@ -64,6 +66,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_golang v1.20.5 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/common v0.61.0 // indirect
@@ -71,6 +74,7 @@ require (
 	github.com/spf13/cobra v1.8.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.17 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.17 // indirect
@@ -115,7 +119,6 @@ require (
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kms v0.32.2 // indirect
 	k8s.io/kube-openapi v0.0.0-20241212222426-2c72e554b1e7 // indirect
-	k8s.io/utils v0.0.0-20241210054802-24370beab758 // indirect
 	sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.31.1 // indirect
 	sigs.k8s.io/controller-runtime v0.19.0 // indirect
 	sigs.k8s.io/gateway-api v1.1.0 // indirect

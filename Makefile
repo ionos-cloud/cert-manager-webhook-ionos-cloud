@@ -34,6 +34,8 @@ download: ## Download dependencies
 clean:
 	rm -rf ./bin
 	rm -rf ./out
+	rm -rf ./internal/clouddns/mocks
+
 
 ##@ Development cycle
 
@@ -41,9 +43,9 @@ MOCKERY = bin/mockery-$(GOLANGCI_VERSION)
 $(MOCKERY):
 	GOBIN=$(PWD)/bin go install github.com/vektra/mockery/v2@v$(MOCKERY_VERSION)
 
-.PHONY: generate
-generate: $(MOCKERY) ## Generate mocks
-	go generate ./...
+.PHONY: generate-mocks
+generate-mocks: $(MOCKERY) ## Generate mocks
+	bin/mockery --name DNSAPI --output internal/clouddns/mocks --recursive
 
 .PHONY: build
 build: ## Build the binary
