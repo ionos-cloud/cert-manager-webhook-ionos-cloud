@@ -24,17 +24,6 @@ jobs:
                 helm package chart/cert-manager-webhook-ionos-cloud/
             - name: Create Release
               uses: ncipollo/release-action@v1
-              id: create-release
-              with:
-                tag: ${{ steps.get-latest-tag.outputs.latest-tag }}
-                name: ${{ steps.get-latest-tag.outputs.latest-tag }} - Chart
-                body: ${{ needs.tag.outputs.changelog }}
-                token: ${{ github.token }}
-                prerelease: false
-                artifacts: >
-                  ${{ steps.download-binaries.outputs.download-path }}/**/*,
-            - name: Create Release
-              uses: ncipollo/release-action@v1
               with:
                 tag: ${{ steps.get-latest-tag.outputs.latest-tag }}
                 name: ${{ steps.get-latest-tag.outputs.latest-tag }} - Chart
@@ -44,17 +33,8 @@ jobs:
                 prerelease: false
                 artifacts: >
                   *.tar.gz
-            - name: Create Release
-              uses: ncipollo/release-action@v1
-              with:
-                tag: ${{ steps.get-latest-tag.outputs.latest-tag }}
-                name: ${{ steps.get-latest-tag.outputs.latest-tag }} - Chart
-                body: | 
-                    Helm chart version ${{ steps.get-latest-tag.outputs.latest-tag }}
-                token: ${{ github.token }}
-                prerelease: false
-                artifacts: >
-                  *.tar.gz
+            # TODO: update helm repo index.yaml file using: using helm repo command
+            
 
             
 
