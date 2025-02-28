@@ -1,0 +1,61 @@
+name: deploy helm chart
+on:
+    workflow_dispatch:
+
+
+jobs:
+    deploy:
+        name: deploy helm chart
+        runs-on: ubuntu-latest
+        steps:
+            - name: Check out code
+              uses: actions/checkout@v4
+              with:
+                fetch-depth: 0
+            - name: Fetch latest tag
+              id: get-latest-tag
+              run: 
+                git fetch --tags
+                echo "latest-tag=$(git tag --list --sort='-*authordate' | head -n 1)" >> "$GITHUB_OUTPUT"
+            - name: Install helm chart
+              uses: azure/setup-helm@v4.3.0
+            - name: Package helm chart
+              run: |
+                helm package chart/cert-manager-webhook-ionos-cloud/
+            - name: Create Release
+              uses: ncipollo/release-action@v1
+              id: create-release
+              with:
+                tag: ${{ steps.get-latest-tag.outputs.latest-tag }}
+                name: ${{ steps.get-latest-tag.outputs.latest-tag }} - Chart
+                body: ${{ needs.tag.outputs.changelog }}
+                token: ${{ github.token }}
+                prerelease: false
+                artifacts: >
+                  ${{ steps.download-binaries.outputs.download-path }}/**/*,
+            - name: Create Release
+              uses: ncipollo/release-action@v1
+              with:
+                tag: ${{ steps.get-latest-tag.outputs.latest-tag }}
+                name: ${{ steps.get-latest-tag.outputs.latest-tag }} - Chart
+                body: | 
+                    Helm chart version ${{ steps.get-latest-tag.outputs.latest-tag }}
+                token: ${{ github.token }}
+                prerelease: false
+                artifacts: >
+                  *.tar.gz
+            - name: Create Release
+              uses: ncipollo/release-action@v1
+              with:
+                tag: ${{ steps.get-latest-tag.outputs.latest-tag }}
+                name: ${{ steps.get-latest-tag.outputs.latest-tag }} - Chart
+                body: | 
+                    Helm chart version ${{ steps.get-latest-tag.outputs.latest-tag }}
+                token: ${{ github.token }}
+                prerelease: false
+                artifacts: >
+                  *.tar.gz
+
+            
+
+            
