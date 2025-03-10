@@ -26,6 +26,7 @@ jobs:
             - name: Create Release
               uses: ncipollo/release-action@v1
               with:
+                tag: ${{ steps.get-latest-tag.outputs.latest-tag }}-chart
                 name: ${{ steps.get-latest-tag.outputs.latest-tag }} - Chart
                 body: | 
                     Helm chart version ${{ steps.get-latest-tag.outputs.latest-tag }}
