@@ -33,7 +33,7 @@ jobs:
                 token: ${{ github.token }}
                 prerelease: false
                 artifacts: >
-                  *.tar.gz
+                  *.tgz
             - name: switch to helm repo branch and create/update index.yaml
               run: |
                 git checkout helm-repo
