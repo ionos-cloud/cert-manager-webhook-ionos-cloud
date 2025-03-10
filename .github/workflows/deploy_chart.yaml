@@ -33,7 +33,21 @@ jobs:
                 prerelease: false
                 artifacts: >
                   *.tar.gz
-            # TODO: update helm repo index.yaml file using: using helm repo command
+            - name: switch to helm repo branch and create/update index.yaml
+              run: |
+                git checkout helm-repo
+                // if index.yaml exists and is not empty, we use merge
+                if [ -a index.yaml ] && [ -s index.yaml ]; then
+                  helm repo index . --merge index.yaml --url https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/
+                else
+                  helm repo index . --url https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/
+                fi
+
+                git add index.yaml
+                git commit -m "chore(chart): update helm repository index"
+                git push origin helm repo
+    
+
             
 
             
