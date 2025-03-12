@@ -3,6 +3,8 @@ GOLANGCI_VERSION = 1.62.0
 HELM_DOCS_VERSION = 1.14.2
 GO_LICENSES_VERSION = 1.6.0
 LICENCES_IGNORE_LIST = $(shell cat licenses/licenses-ignore-list.txt)
+ENVTEST_K8S_VERSION = 1.30
+ENV_TEST_VERSION := v0.20.3
 
 VERSION ?= 0.0.1
 IMAGE_TAG_BASE ?= ionos-cloud/cert-manager-webhook-ionos-cloud
@@ -20,7 +22,6 @@ export PATH := $(PWD)/bin:$(PATH)
 .PHONY: help
 help: ## Display this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_0-9-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
-
 
 
 out:
@@ -112,3 +113,40 @@ ignoredLicenses := $(shell cat .licenses/licenses-ignore-list.txt | tr '\n' ',')
 check-licenses: $(GO_LICENSES)  ## Check the licenses
 	$(GO_LICENSES) check --include_tests --ignore $(manualLicenses) --ignore $(ignoredLicenses) ./...
 
+
+
+ENVTEST = $(shell pwd)/bin/setup-envtest
+.PHONY: envtest
+envtest: ## Download envtest-setup locally if necessary.
+	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
+
+
+## conformance tests dependencies
+test:
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -v cmd/webhook/main_test.go
+
+install-test-dependencies: _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/etcd _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/kube-apiserver _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/kubectl
+
+_test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH).tar.gz: | _test
+	curl -fsSL https://go.kubebuilder.io/test-tools/$(KUBEBUILDER_VERSION)/$(OS)/$(ARCH) -o $@
+
+_test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/etcd _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/kube-apiserver _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/kubectl: _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH).tar.gz | _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)
+	tar xfO $< kubebuilder/bin/$(notdir $@) > $@ && chmod +x $@
+
+_test $(OUT) _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH):
+	mkdir -p $@
+
+
+# go-get-tool will 'go get' any package $2 and install it to $1.
+PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+define go-get-tool
+@[ -f $(1) ] || { \
+set -e ;\
+TMP_DIR=$$(mktemp -d) ;\
+cd $$TMP_DIR ;\
+go mod init tmp ;\
+echo "Downloading $(2)" ;\
+GOBIN=$(PROJECT_DIR)/bin go install $(2) ;\
+rm -rf $$TMP_DIR ;\
+}
+endef
