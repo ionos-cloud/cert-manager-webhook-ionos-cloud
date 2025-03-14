@@ -122,19 +122,22 @@ envtest: ## Download envtest-setup locally if necessary.
 
 
 
-
-GOPATH = $(shell go env GOPATH)
 # this step should be removed, the binaries downloaded are not needed in tests
 # their are just here because of some old code here: 
 # https://github.com/cert-manager/cert-manager/blob/master/test/apiserver/envs.go#L31
 get-dependencies:
-	wget -P $(GOPATH)/mod/github.com/cert-manager/cert-manager@$(CERT_MANAGER_VERSION)/_bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/etcd
-	wget -P $(GOPATH)/mod/github.com/cert-manager/cert-manager@$(CERT_MANAGER_VERSION)/_bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/kube-apiserver
-	wget -P $(GOPATH)/mod/github.com/cert-manager/cert-manager@$(CERT_MANAGER_VERSION)/_bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/kubectl
+	mkdir -p bin/tools
+	wget -P bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/etcd
+	wget -P bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/kube-apiserver
+	wget -P bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/kubectl
 
 # if running locally no need to repeat the setup steps for every run
 conformace-test-standalone:
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -tags=conformance -v cmd/webhook/main_test.go
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" \
+	TEST_ASSET_ETCD="$(PWD)/bin/tools/etcd" \
+	TEST_ASSET_KUBE_APISERVER="$(PWD)/bin/tools/kube-apiserver" \
+	TEST_ASSET_KUBECTL="$(PWD)/bin/tools/kubectl" \
+	go test -tags=conformance -v cmd/webhook/main_test.go
 
 conformance-test: envtest get-dependencies conformace-test-standalone
 
