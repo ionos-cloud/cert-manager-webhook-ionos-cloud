@@ -130,6 +130,9 @@ get-dependencies:
 	wget -P bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/etcd
 	wget -P bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/kube-apiserver
 	wget -P bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/kubectl
+	chmod 755 bin/tools/etcd
+    chmod 755 bin/tools/kube-apiserver
+    chmod 755 bin/tools/kubectl
 
 # if running locally no need to repeat the setup steps for every run
 conformace-test-standalone:
