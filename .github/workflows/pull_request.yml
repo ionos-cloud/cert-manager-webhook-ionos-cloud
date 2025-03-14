@@ -53,6 +53,9 @@ jobs:
           TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
           IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
         run: |
+          chmod 755 $PWD/bin/tools/etcd
+          chmod 755 $PWD/bin/tools/kube-apiserver
+          chmod 755 $PWD/bin/tools/kubectl
           make conformance-test
 
       - name: Set Up Docker Buildx
