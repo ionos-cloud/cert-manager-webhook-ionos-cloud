@@ -1,3 +1,5 @@
+//go:build conformance
+
 package main_test
 
 import (
@@ -16,27 +18,22 @@ var (
 )
 
 func TestRunsSuite(t *testing.T) {
-	// The manifest path should contain a file named config.json that is a
-	// snippet of valid configuration that should be included on the
-	// ChallengeRequest passed as part of the test cases.
-
+	if zone == "" {
+		t.Fatal("TEST_ZONE_NAME environment variable must be set before running the test")
+	}
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+
 	config := ionoscloud.NewConfigurationFromEnv()
 	dnsClient := ionoscloud.NewAPIClient(config)
 
 	solver := resolver.NewResolver(clouddns.CreateDNSAPI(dnsClient), logger)
 	fixture := acmetest.NewFixture(solver,
 		acmetest.SetResolvedZone(zone),
-		acmetest.SetManifestPath("testdata"),
-		acmetest.SetDNSServer("127.0.0.1:59351"),
-		acmetest.SetUseAuthoritative(false),
+		acmetest.SetResolvedFQDN("_acme-challenge."+zone+"."),
+		acmetest.SetConfig("testdata"),
 	)
-	//need to uncomment and  RunConformance delete runBasic and runExtended once https://github.com/cert-manager/cert-manager/pull/4835 is merged
 	fixture.RunConformance(t)
-	//fixture.RunBasic(t)
-	//fixture.RunExtended(t)
-
 }

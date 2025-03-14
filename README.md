@@ -124,8 +124,17 @@ Check out the [make targets](https://www.gnu.org/software/make/manual/make.html)
 make help
 ```
 
-### Integration Tests
+### Conformance tests
 
+ DNS providers must run the DNS01 provider conformance testing suite, else they will have undetermined behaviour when used with cert-manager.
+
+ The conformance tests are provided by the cert-manager test package: https://github.com/cert-manager/cert-manager/blob/master/test/acme/suite.go
+
+ To run the conformance tests: `TEST_ZONE_NAME=test-zone.com IONOS_TOKEN=api-token make conformance-test`
+
+ the following environment variables must be set:
+ * TEST_ZONE_NAME: the zone for which DNS-01 will be performed
+ * IONOS_TOKEN: the token for accessing IONOS DNS API
 
 ### Release Process Overview
 

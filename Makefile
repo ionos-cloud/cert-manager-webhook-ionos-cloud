@@ -4,7 +4,7 @@ HELM_DOCS_VERSION = 1.14.2
 GO_LICENSES_VERSION = 1.6.0
 LICENCES_IGNORE_LIST = $(shell cat licenses/licenses-ignore-list.txt)
 ENVTEST_K8S_VERSION = 1.30
-ENV_TEST_VERSION := v0.20.3
+CERT_MANAGER_VERSION = v1.17.1
 
 VERSION ?= 0.0.1
 IMAGE_TAG_BASE ?= ionos-cloud/cert-manager-webhook-ionos-cloud
@@ -56,7 +56,7 @@ build: ## Build the binary
 GO_TEST = go tool gotest.tools/gotestsum --format pkgname
 .PHONY: unit-test
 unit-test: out ## Run unit tests with coverage and generate json report
-	$(GO_TEST) --junitfile out/report.xml -- -race ./... -count=1 -short -cover -coverprofile=out/cover.out
+	$(GO_TEST) --junitfile out/report.xml -- -race ./... -count=1 -short -tags=unit -cover -coverprofile=out/cover.out
 
 .PHONY: html-coverage
 html-coverage: out/report.xml ## Generate html coverage report
@@ -114,30 +114,28 @@ check-licenses: $(GO_LICENSES)  ## Check the licenses
 	$(GO_LICENSES) check --include_tests --ignore $(manualLicenses) --ignore $(ignoredLicenses) ./...
 
 
-
+## conformance tests set up
 ENVTEST = $(shell pwd)/bin/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
 	$(call go-get-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest@latest)
 
+# this step should be removed, the binaries downloaded are not needed in tests
+# their are just here because of some old code here: 
+# https://github.com/cert-manager/cert-manager/blob/master/test/apiserver/envs.go#L31
+get-dependencies:
+	wget -P $$GOPATH/mod/github.com/cert-manager/cert-manager@$(CERT_MANAGER_VERSION)/_bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/etcd
+	wget -P $$GOPATH/mod/github.com/cert-manager/cert-manager@$(CERT_MANAGER_VERSION)/_bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/kube-apiserver
+	wget -P $$GOPATH/mod/github.com/cert-manager/cert-manager@$(CERT_MANAGER_VERSION)/_bin/tools https://cloud-dns-experimental.s3-eu-central-2.ionoscloud.com/test-binaries/kubectl
 
-## conformance tests dependencies
-test:
-	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -v cmd/webhook/main_test.go
+# if running locally no need to repeat the setup steps for every run
+conformace-test-standalone:
+	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test -tags=conformance -v cmd/webhook/main_test.go
 
-install-test-dependencies: _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/etcd _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/kube-apiserver _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/kubectl
-
-_test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH).tar.gz: | _test
-	curl -fsSL https://go.kubebuilder.io/test-tools/$(KUBEBUILDER_VERSION)/$(OS)/$(ARCH) -o $@
-
-_test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/etcd _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/kube-apiserver _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)/kubectl: _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH).tar.gz | _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH)
-	tar xfO $< kubebuilder/bin/$(notdir $@) > $@ && chmod +x $@
-
-_test $(OUT) _test/kubebuilder-$(KUBEBUILDER_VERSION)-$(OS)-$(ARCH):
-	mkdir -p $@
-
+conformance-test: envtest get-dependencies conformace-test-standalone
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
+# source: https://book.kubebuilder.io/cronjob-tutorial/basic-project#build-infrastructure
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 define go-get-tool
 @[ -f $(1) ] || { \

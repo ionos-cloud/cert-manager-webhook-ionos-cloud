@@ -3,8 +3,9 @@ package clouddns
 import (
 	"context"
 	"fmt"
-	dnsclient "github.com/ionos-cloud/sdk-go-dns"
 	"net/http"
+
+	dnsclient "github.com/ionos-cloud/sdk-go-dns"
 )
 
 const typeTxtRecord = "TXT"
@@ -68,7 +69,7 @@ func (c *APIClient) CreateTXTRecord(zoneId string, recordName string, content st
 	if err != nil {
 		return dnsclient.RecordRead{}, err
 	}
-	if resp.StatusCode != http.StatusCreated {
+	if resp.StatusCode != http.StatusAccepted {
 		return dnsclient.RecordRead{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 	return record, nil
@@ -79,7 +80,7 @@ func (c *APIClient) DeleteRecord(zoneId string, recordId string) error {
 	if err != nil {
 		return err
 	}
-	if resp.StatusCode != http.StatusNoContent {
+	if resp.StatusCode != http.StatusAccepted {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 	return nil
