@@ -1,6 +1,5 @@
 .idea
 bin/
-_test/
 out/
 .envrc
 index.yaml
