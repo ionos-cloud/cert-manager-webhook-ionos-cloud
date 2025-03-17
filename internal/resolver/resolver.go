@@ -3,10 +3,11 @@ package resolver
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns"
 	dnsclient "github.com/ionos-cloud/sdk-go-dns"
 	"k8s.io/utils/ptr"
-	"strings"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook"
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
@@ -177,7 +178,7 @@ func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeReque
 }
 
 func recordNameFromChallenge(ch *v1alpha1.ChallengeRequest) string {
-	return strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone)
+	return strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone+".")
 }
 
 func zoneNameFromChallenge(ch *v1alpha1.ChallengeRequest) string {
