@@ -28,6 +28,7 @@ func TestRunsSuite(t *testing.T) {
 		t.Fatal(err.Error())
 	}
 
+	// this is to remove a log message warning in controller runtime
 	controller_runtime_log.SetLogger(logr.New(controller_runtime_log.NullLogSink{}))
 
 	config := ionoscloud.NewConfigurationFromEnv()
