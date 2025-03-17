@@ -114,7 +114,7 @@ check-licenses: $(GO_LICENSES)  ## Check the licenses
 	$(GO_LICENSES) check --include_tests --ignore $(manualLicenses) --ignore $(ignoredLicenses) ./...
 
 
-## conformance tests set up
+##@ conformance tests
 ENVTEST = $(shell pwd)/bin/setup-envtest
 .PHONY: envtest
 envtest: ## Download envtest-setup locally if necessary.
@@ -134,15 +134,16 @@ get-dependencies:
 	chmod 755 bin/tools/kube-apiserver
 	chmod 755 bin/tools/kubectl
 
-# if running locally no need to repeat the setup steps for every run
-conformace-test-standalone:
+
+conformance-test-standalone: ## runs conformance tests without setup, if running locally no need to repeat the setup steps for every run
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" \
 	TEST_ASSET_ETCD="$(PWD)/bin/tools/etcd" \
 	TEST_ASSET_KUBE_APISERVER="$(PWD)/bin/tools/kube-apiserver" \
 	TEST_ASSET_KUBECTL="$(PWD)/bin/tools/kubectl" \
 	go test -tags=conformance -v cmd/webhook/main_test.go
 
-conformance-test: envtest get-dependencies conformace-test-standalone
+
+conformance-test: envtest get-dependencies conformance-test-standalone ## runs conformance tests
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 # source: https://book.kubebuilder.io/cronjob-tutorial/basic-project#build-infrastructure
