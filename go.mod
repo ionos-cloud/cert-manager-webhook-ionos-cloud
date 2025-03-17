@@ -1,7 +1,6 @@
 module github.com/ionos-cloud/cert-manager-webhook-ionos-cloud
 
 go 1.24.0
-
 // Do not remove this comment:
 // please place any replace statements here at the top for visibility and add a
 // comment to it as to when it can be removed
@@ -13,7 +12,7 @@ require (
 	github.com/ionos-cloud/sdk-go-dns v1.4.0
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/zap v1.27.0
-	k8s.io/client-go v0.32.2
+	k8s.io/client-go v0.32.3
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
 )
 
@@ -112,9 +111,9 @@ require (
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	gotest.tools/gotestsum v1.12.0 // indirect
-	k8s.io/api v0.32.2 // indirect
+	k8s.io/api v0.32.3 // indirect
 	k8s.io/apiextensions-apiserver v0.32.2 // indirect
-	k8s.io/apimachinery v0.32.2 // indirect
+	k8s.io/apimachinery v0.32.3 // indirect
 	k8s.io/apiserver v0.32.2 // indirect
 	k8s.io/component-base v0.32.2 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
