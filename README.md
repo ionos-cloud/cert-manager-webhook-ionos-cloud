@@ -40,14 +40,34 @@ Before proceeding, ensure you have the following:
    
 2. ***Install the webhook server***
     ```bash
-    # [TODO] Add url to helm repository
-    helm repo add cert-manager-webhook-ionos-cloud https://github.io/cert-manager-webhook-ionos-cloud/
-    # [TODO] Add right parameters
-    helm upgrade cert-manager-webhook-ionos-cloud --namespace cert-manager --install cert-manager-webhook-ionos-cloud/cert-manager-webhook-ionos-cloud --set IONOS_CLOUD_AUTH_TOKEN_SECRET_NAME=cert-manager-webhook-ionos-cloud
+    helm repo add cert-manager-webhook-ionos-cloud https://ionos-cloud.github.io/cert-manager-webhook-ionos-cloud
+    helm upgrade cert-manager-webhook-ionos-cloud \
+    --namespace cert-manager \
+    --install cert-manager-webhook-ionos-cloud/cert-manager-webhook-ionos-cloud
     ```
 
 3. ***Configuration of ClusterIssuer/Issuer:***
-   [TODO] document
+
+The first step of using cert-manager is creating an Issuer or ClusterIssuer. 
+
+```yaml
+
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: example@example.com # Replace this with your email address
+    privateKeySecretRef:
+      name: letsencrypt-prod
+    solvers:
+    - dns01:
+        webhook:
+          solverName: ionos-cloud
+          groupName: acme.ionos.com
+```
 
    
 4. ***Check with a demonstration of Ingress Integration with Wildcard SSL/TLS Certificate Generation***
@@ -63,7 +83,7 @@ Before proceeding, ensure you have the following:
       secretName: wildcard-example-tls
       issuerRef:
         name: letsencrypt-prod
-        kind: Issuer
+        kind: ClusterIssuer
       commonName: '*.example.runs.ionos.cloud' # project must be the owner of this zone
       duration: 8760h0m0s
       dnsNames:
@@ -95,11 +115,6 @@ Before proceeding, ensure you have the following:
             - "app.example.runs.ionos.cloud"
           secretName: wildcard-example-tls
     ```
-
-## Config Options
-
-[TODO] document
-
 
 ## Contribute
 
@@ -133,8 +148,6 @@ make help
  To run the conformance tests: `TEST_ZONE_NAME=test-zone.com IONOS_TOKEN=api-token make conformance-test`
 
  the following environment variables must be set:
+ 
  * TEST_ZONE_NAME: the zone for which DNS-01 will be performed
  * IONOS_TOKEN: the token for accessing IONOS DNS API
-
-### Release Process Overview
-

@@ -15,9 +15,7 @@ import (
 	controller_runtime_log "sigs.k8s.io/controller-runtime/pkg/log"
 )
 
-var (
-	zone = os.Getenv("TEST_ZONE_NAME")
-)
+var zone = os.Getenv("TEST_ZONE_NAME")
 
 func TestRunsSuite(t *testing.T) {
 	if zone == "" {
@@ -41,5 +39,4 @@ func TestRunsSuite(t *testing.T) {
 		acmetest.SetConfig("testdata"),
 	)
 	fixture.RunConformance(t)
-
 }
