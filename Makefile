@@ -66,6 +66,10 @@ html-coverage: out/report.xml ## Generate html coverage report
 run: ## Run the application
 	go run cmd/webhook/main.go
 
+.PHONY: fmt
+fmt: ## Run go fmt against code.
+	$(GO_RUN) mvdan.cc/gofumpt -w .
+
 ##@ static analysis
 
 GOLANGCI_LINT = bin/golangci-lint-$(GOLANGCI_VERSION)
@@ -76,6 +80,17 @@ $(GOLANGCI_LINT):
 .PHONY: lint
 lint: $(GOLANGCI_LINT) download ## Run linter
 	$(GOLANGCI_LINT) run -v
+
+.PHONY: lint-with-fix
+lint-with-fix: ## Run golangci-lint against code with fix.
+	$(GO_RUN) github.com/golangci/golangci-lint/cmd/golangci-lint run --build-tags unit --fix
+
+.PHONY: vet
+vet: ## Run go vet against code.
+	go vet -tags unit ./...
+
+.PHONY: static-analysis
+static-analysis: lint vet ## Run static analysis against code.
 
 ##@ helm
 
