@@ -1,18 +1,21 @@
 package main
 
 import (
+	"os"
+
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns"
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/resolver"
 	ionoscloud "github.com/ionos-cloud/sdk-go-dns"
 
 	"go.uber.org/zap"
-	"os"
 )
 
 // GroupName is the K8s API group.
-var GroupName = os.Getenv("GROUP_NAME")
-var IonosToken = os.Getenv("IONOS_TOKEN")
+var (
+	GroupName  = os.Getenv("GROUP_NAME")
+	IonosToken = os.Getenv("IONOS_TOKEN")
+)
 
 func main() {
 	if GroupName == "" {
