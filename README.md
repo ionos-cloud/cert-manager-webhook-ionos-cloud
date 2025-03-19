@@ -99,6 +99,7 @@ spec:
         ingress.kubernetes.io/rewrite-target: /
         kubernetes.io/ingress.class: "nginx"
     spec:
+      ingressClassName: "nginx"
       rules:
         - host: "app.example.runs.ionos.cloud"
           http:
