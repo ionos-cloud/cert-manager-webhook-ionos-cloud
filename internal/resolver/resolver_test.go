@@ -56,7 +56,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenError: "zone 'test.com' not found",
@@ -77,7 +77,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenRecordCreateKey: "test-key",
@@ -107,7 +107,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenRecordCreateKey: "", // no record should be created
@@ -137,7 +137,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenRecordCreateKey: "test-key",
@@ -172,7 +172,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenError: "error fetching records",
@@ -194,7 +194,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenRecordCreateKey: "test-key",
@@ -212,7 +212,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				s.dnsAPIMock.EXPECT().GetZones(zoneName).Return(zoneReadList, tc.whenZonesReadError)
 			}
 			if tc.givenRecords != nil {
-				recordName := strings.TrimSuffix(tc.whenChallenge.ResolvedFQDN, "."+tc.whenChallenge.ResolvedZone+".")
+				recordName := strings.TrimSuffix(tc.whenChallenge.ResolvedFQDN, "."+tc.whenChallenge.ResolvedZone)
 				s.dnsAPIMock.EXPECT().GetRecords("test-zone-id", recordName).Return(dnsclient.RecordReadList{
 					Items: &tc.givenRecords,
 				}, tc.whenRecordsReadError)
@@ -254,7 +254,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenError:          "", // no error
@@ -276,7 +276,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenError:          "", // no error
@@ -307,7 +307,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenError:          "", // no error
@@ -321,7 +321,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenError: "error fetching zones",
@@ -343,7 +343,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenError: "error fetching records",
@@ -373,7 +373,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			whenRecordDeleteError: fmt.Errorf("error deleting record"),
@@ -405,7 +405,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				UID:          "test-UID",
 				Key:          "test-key",
 				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
+				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenDeleteRecordId: "test-record-id",
@@ -422,7 +422,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			if len(tc.givenZones) > 0 {
 				zoneId := *tc.givenZones[0].GetId()
 				if tc.givenRecords != nil {
-					recordName := strings.TrimSuffix(tc.whenChallenge.ResolvedFQDN, "."+tc.whenChallenge.ResolvedZone+".")
+					recordName := strings.TrimSuffix(tc.whenChallenge.ResolvedFQDN, "."+tc.whenChallenge.ResolvedZone)
 					s.dnsAPIMock.EXPECT().GetRecords(zoneId, recordName).Return(dnsclient.RecordReadList{
 						Items: &tc.givenRecords,
 					}, tc.whenRecordsReadError)

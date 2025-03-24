@@ -5,20 +5,15 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
   labels:
     app: {{ include "cert-manager-webhook-ionos-cloud.name" . }}
-    chart: {{ include "cert-manager-webhook-ionos-cloud.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: {{ include "cert-manager-webhook-ionos-cloud.name" . }}
-      release: {{ .Release.Name }}
   template:
     metadata:
       labels:
         app: {{ include "cert-manager-webhook-ionos-cloud.name" . }}
-        release: {{ .Release.Name }}
     spec:
       serviceAccountName: {{ include "cert-manager-webhook-ionos-cloud.fullname" . }}
       containers:

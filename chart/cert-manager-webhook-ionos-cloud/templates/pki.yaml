@@ -62,9 +62,6 @@ metadata:
   namespace: {{ .Release.Namespace | quote }}
   labels:
     app: {{ include "cert-manager-webhook-ionos-cloud.name" . }}
-    chart: {{ include "cert-manager-webhook-ionos-cloud.chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
 spec:
   secretName: {{ include "cert-manager-webhook-ionos-cloud.servingCertificate" . }}
   duration: 8760h # 1y

@@ -34,7 +34,8 @@ func TestRunsSuite(t *testing.T) {
 
 	solver := resolver.NewResolver(clouddns.CreateDNSAPI(dnsClient), logger)
 	fixture := acmetest.NewFixture(solver,
-		acmetest.SetResolvedZone(zone),
+		// cert-manager adds a dot a the end of the zone name
+		acmetest.SetResolvedZone(zone+"."),
 		acmetest.SetResolvedFQDN("_acme-challenge."+zone+"."),
 		acmetest.SetConfig("testdata"),
 	)
