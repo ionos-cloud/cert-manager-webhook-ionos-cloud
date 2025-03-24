@@ -178,7 +178,7 @@ func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeReque
 }
 
 func recordNameFromChallenge(ch *v1alpha1.ChallengeRequest) string {
-	return strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone+".")
+	return strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone)
 }
 
 func zoneNameFromChallenge(ch *v1alpha1.ChallengeRequest) string {

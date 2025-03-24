@@ -46,7 +46,10 @@ Before proceeding, ensure you have the following:
     --install cert-manager-webhook-ionos-cloud/cert-manager-webhook-ionos-cloud
     ```
 
-3. ***Configuration of ClusterIssuer/Issuer:***
+> [!IMPORTANT]
+> Before engaging into DNS-01, cert-manager does a DNS pre-check (SOA and NS records). Depending on your environment, you may see a failure in the cert-manager logs with the following message: `error When querying the SOA record for the domain...`. To fix the issue, you need to add the following arguments to the cert-manager: `--dns01-recursive-nameservers-only`, `--dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53`. For more details, check out the official documentation: [https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check](https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check)
+
+1. ***Configuration of ClusterIssuer/Issuer:***
 
 The first step of using cert-manager is creating an Issuer or ClusterIssuer. 
 
