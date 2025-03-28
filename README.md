@@ -154,3 +154,10 @@ make help
  
  * TEST_ZONE_NAME: the zone for which DNS-01 will be performed
  * IONOS_TOKEN: the token for accessing IONOS DNS API
+
+### Compatibility:
+
+This extension is tested with following versions:
+
+Kubernetes: v1.32.0, v1.31.0, v1.30.0
+cert-manager: v1.15.0, v1.16.0, v1.17.0
