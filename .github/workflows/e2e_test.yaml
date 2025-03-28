@@ -25,9 +25,10 @@ jobs:
             cert-manager jetstack/cert-manager \
             --namespace cert-manager \
             --create-namespace \
-            --set crds.enabled=true
+            --set crds.enabled=true \
+             --set 'extraArgs={--dns01-recursive-nameservers-only,--dns01-recursive-nameservers=8.8.8.8:53\,1.1.1.1:53}' \
             --version ${{ matrix.cert_manager_version }}
-            --set 'extraArgs={--dns01-recursive-nameservers-only,--dns01-recursive-nameservers=8.8.8.8:53\,1.1.1.1:53}'
+           
         - name: create ionos token secret
           env:
               IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
