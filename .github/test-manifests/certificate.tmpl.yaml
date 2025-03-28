@@ -1,0 +1,13 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: certificate-ionos-with-dns-01-test
+  namespace: default
+spec:
+  secretName: certificate-ionos-with-dns-01-test
+  issuerRef:
+    name: letsencrypt-ionos-e2e
+    kind: Issuer
+  commonName: $TEST_ZONE_NAME
+  dnsNames:
+    - $TEST_ZONE_NAME

@@ -1,0 +1,51 @@
+name: e2e tests
+on:
+  pull_request:
+
+
+    
+jobs:
+    e2e-test:
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          kubernetes_version: ["v1.32.0", "v1.31.0", "v1.30.0"]
+          cert_manager_version: ["v1.15.0", "v1.16.0", "v1.17.0"]
+      steps:
+        - name: Create k8s Kind Cluster
+          uses: helm/kind-action@v1
+          with:
+            node_image: kindest/node:${{ matrix.kubernetes_version }}
+        - uses: azure/setup-helm@v4.2.0
+        - uses: actions/checkout@v4
+        - name: install cert-manager chart
+          run: |
+            helm repo add jetstack https://charts.jetstack.io --force-update
+            helm install \
+            cert-manager jetstack/cert-manager \
+            --namespace cert-manager \
+            --create-namespace \
+            --set crds.enabled=true
+            --version ${{ matrix.cert_manager_version }}
+            --set 'extraArgs={--dns01-recursive-nameservers-only,--dns01-recursive-nameservers=8.8.8.8:53\,1.1.1.1:53}'
+        - name: create ionos token secret
+          env:
+              IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
+          run: |
+            kubectl create secret generic cert-manager-webhook-ionos-cloud --from-literal=IONOS_CLOUD="(echo $IONOS_CLOUD)"
+        - name: install kube-ecr-secrets-operator chart
+          run: |
+            helm install kube-ecr-secrets-operator chart/cert-manager-webhook
+            kubectl wait --timeout=30s --for=jsonpath='{.status.readyReplicas}'=1 deployment/cert-manager-webhook-ionos-cert-manager-webhook-ionos-cloud
+        - name: create issuer
+          run: |
+            kubectl apply -f .github/test-manifests/issuer.yaml
+            kubectl wait --timeout=10s --for=condition=Ready=True issuer/letsencrypt-ionos-e2e
+        - name: create certificate and check issuance
+          env:
+              TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
+          run: |
+            cat .github/test-manifests/certificate.tmpl.yaml | envsubst | kubectl apply -f -
+            kubectl wait --timeout=2m --for=condition=Ready=True certificate/certificate-ionos-with-dns-01-test
+          
+            
