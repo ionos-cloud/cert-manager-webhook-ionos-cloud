@@ -40,6 +40,7 @@ jobs:
             helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-cloud
             sleep 5s
             kubectl describe deployment cert-manager-webhook-ionos-cloud
+            kubectl describe pods
             kubectl logs -l app=cert-manager-webhook-ionos-cloud
             kubectl wait --timeout=30s --for=jsonpath='{.status.readyReplicas}'=1 deployment/cert-manager-webhook-ionos-cloud
         - name: create issuer
