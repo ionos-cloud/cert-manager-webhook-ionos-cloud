@@ -1,7 +1,6 @@
 module github.com/ionos-cloud/cert-manager-webhook-ionos-cloud
 
 go 1.24.0
-
 // Do not remove this comment:
 // please place any replace statements here at the top for visibility and add a
 // comment to it as to when it can be removed
@@ -16,7 +15,7 @@ require (
 	go.uber.org/zap v1.27.0
 	k8s.io/client-go v0.32.3
 	k8s.io/utils v0.0.0-20241210054802-24370beab758
-	sigs.k8s.io/controller-runtime v0.20.3
+	sigs.k8s.io/controller-runtime v0.20.4
 )
 
 require (
