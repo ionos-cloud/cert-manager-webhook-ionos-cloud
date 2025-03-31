@@ -34,7 +34,7 @@ jobs:
           env:
               IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
           run: |
-            kubectl create secret generic cert-manager-webhook-ionos-cloud --from-literal=IONOS_CLOUD="$(echo $IONOS_CLOUD)"
+            kubectl create secret generic cert-manager-webhook-ionos-cloud --from-literal=auth-token="$(echo $IONOS_CLOUD)"
         - name: install cert-manager-webhook-ionos-cloud chart
           run: |
             helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-cloud
