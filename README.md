@@ -157,7 +157,4 @@ make help
 
 ### Compatibility:
 
-This extension is tested with following versions:
-
-Kubernetes: v1.32.0, v1.31.0, v1.30.0
-cert-manager: v1.15.0, v1.16.0, v1.17.0
+This extension is **tested** with following cert-manager major versions: v1.15.x, v1.16.x, v1.17.x
