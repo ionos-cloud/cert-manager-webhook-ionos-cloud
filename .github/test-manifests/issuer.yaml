@@ -4,8 +4,8 @@ metadata:
   name: letsencrypt-ionos-e2e
 spec:
   acme:
-    # using zerossl because let's encrypt has rate limiting issues
-    server: https://acme.zerossl.com/v2/DV90
+    # using let's encrypt staging to avoid any rate limiting issues
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
     email: paas-dns@ionos.com
     privateKeySecretRef:
       name: letsencrypt-ionos
