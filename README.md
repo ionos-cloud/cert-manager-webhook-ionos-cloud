@@ -154,3 +154,7 @@ make help
  
  * TEST_ZONE_NAME: the zone for which DNS-01 will be performed
  * IONOS_TOKEN: the token for accessing IONOS DNS API
+
+### Compatibility:
+
+This extension is **tested** with following cert-manager major versions: v1.15.x, v1.16.x, v1.17.x
