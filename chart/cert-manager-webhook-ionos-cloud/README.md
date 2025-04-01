@@ -56,6 +56,8 @@ spec:
 | Name        | Description           | Value  |
 | ------------- |:-------------:| -----:|
 | ionosCredentialsSecretName     | the name of the Kubernetes secret with the IONOS token     |  cert-manager-webhook-ionos-cloud |
+| certManager.namespace    | the namespace where cert-manager is deployed     |  cert-manager |
+| certManager.serviceAccountName    | the name of the cert-manager service account     |  cert-manager |
 | image.tag     | the container image tag name |   latest |
 | image.pullPolicy     |  The image pull policy to be used for the container image    |   IfNotPresent |
 | resources.limits.cpu      | The cpu limit for the container      |    |

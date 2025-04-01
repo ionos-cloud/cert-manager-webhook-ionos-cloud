@@ -49,6 +49,11 @@ Before proceeding, ensure you have the following:
 > [!IMPORTANT]
 > Before engaging into DNS-01, cert-manager does a DNS pre-check (SOA and NS records). Depending on your environment, you may see a failure in the cert-manager logs with the following message: `error When querying the SOA record for the domain...`. To fix the issue, you need to add the following arguments to the cert-manager: `--dns01-recursive-nameservers-only`, `--dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53`. For more details, check out the official documentation: [https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check](https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check)
 
+
+3. **Using a custom cert-manager namespace (optional)**:
+
+By convention, cert-manager is deployed in a namespace named `cert-manager`. The chart assumes this default and uses this value to add privileges to the cert-manager service account to enable the creation of resources of type "ionos-cloud". If you are deploying the cert-manager chart in a different namespace, you need to use the `certManager.namespace` chart value to set the name of the namespace where cert-manager is deployed. (e.g using `--set certManager.namespace=custom_namespace`)
+
 1. ***Configuration of ClusterIssuer/Issuer:***
 
 The first step of using cert-manager is creating an Issuer or ClusterIssuer. 
@@ -73,7 +78,7 @@ spec:
 ```
 
    
-4. ***Check with a demonstration of Ingress Integration with Wildcard SSL/TLS Certificate Generation***
+5. ***Check with a demonstration of Ingress Integration with Wildcard SSL/TLS Certificate Generation***
    Given the preceding configuration, it is possible to exploit the capabilities of the Issuer or ClusterIssuer to
    dynamically produce wildcard SSL/TLS certificates in the following manner:
     ```yaml
@@ -157,4 +162,4 @@ make help
 
 ### Compatibility:
 
-This extension is **tested** with following cert-manager major versions: v1.15.x, v1.16.x, v1.17.x
+This extension is **tested** with the following cert-manager major versions: v1.15.x, v1.16.x, v1.17.x
