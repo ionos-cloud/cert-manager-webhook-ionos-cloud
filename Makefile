@@ -38,6 +38,7 @@ clean:
 .PHONY: generate-mocks
 generate-mocks: ## Generate mocks
 	$(GO_RUN) github.com/vektra/mockery/v2 --name DNSAPI --output internal/clouddns/mocks --recursive --exclude internal/tools
+	$(GO_RUN) github.com/vektra/mockery/v2 --name K8Client --output internal/resolver/mocks --recursive --exclude internal/tools
 
 .PHONY: build
 build: ## Build the binary

@@ -4,34 +4,43 @@ import (
 	"os"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/cmd"
-	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns"
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/resolver"
-	ionoscloud "github.com/ionos-cloud/sdk-go-dns"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"go.uber.org/zap"
 )
 
-// GroupName is the K8s API group.
+// groupName is the K8s API group.
 var (
-	GroupName  = os.Getenv("GROUP_NAME")
-	IonosToken = os.Getenv("IONOS_TOKEN")
+	groupName = os.Getenv("GROUP_NAME")
+	namespace = os.Getenv("NAMESPACE")
 )
 
 func main() {
-	if GroupName == "" {
+	if groupName == "" {
 		panic("GROUP_NAME must be specified")
 	}
 
-	if IonosToken == "" {
-		panic("IONOS_TOKEN must be specified")
+	if namespace == "" {
+		panic("NAMESPACE must be specified")
 	}
 
 	logger, err := zap.NewProduction()
 	if err != nil {
 		panic(err)
 	}
-	config := ionoscloud.NewConfigurationFromEnv()
-	dnsClient := ionoscloud.NewAPIClient(config)
+
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	clientset, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		panic(err)
+	}
+
 	logger.Info("Starting webhook server")
 
 	// This will register our custom DNS provider with the webhook serving
@@ -39,5 +48,5 @@ func main() {
 	// You can register multiple DNS provider implementations with a single
 	// webhook, where the Name() method will be used to disambiguate between
 	// the different implementations.
-	cmd.RunWebhookServer(GroupName, resolver.NewResolver(clouddns.CreateDNSAPI(dnsClient), logger))
+	cmd.RunWebhookServer(groupName, resolver.NewResolver(clientset, "", resolver.DefaultDNSAPIFactory, logger))
 }
