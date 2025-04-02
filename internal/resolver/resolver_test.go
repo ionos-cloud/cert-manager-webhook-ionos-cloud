@@ -3,23 +3,32 @@
 package resolver
 
 import (
+	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
-	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns/mocks"
+	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns"
+	clouddnsmocks "github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns/mocks"
+	resolvermocks "github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/resolver/mocks"
 	dnsclient "github.com/ionos-cloud/sdk-go-dns"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/utils/ptr"
 )
 
+var typeTxtRecord = ptr.To(dnsclient.RecordType("TXT"))
+
 type ResolverTestSuite struct {
 	suite.Suite
-	dnsAPIMock *mocks.DNSAPI
-	logger     *zap.Logger
+	dnsAPIMock *clouddnsmocks.DNSAPI
+	//k8Client *mocks.K8Client
+	logger *zap.Logger
 }
 
 func TestSuite(t *testing.T) {
@@ -33,7 +42,7 @@ func (s *ResolverTestSuite) SetupSuite() {
 }
 
 func (s *ResolverTestSuite) setupMocks() {
-	s.dnsAPIMock = mocks.NewDNSAPI(s.T())
+	s.dnsAPIMock = clouddnsmocks.NewDNSAPI(s.T())
 	s.logger.Debug("apiClient with mocks is created")
 }
 
@@ -223,7 +232,7 @@ func (s *ResolverTestSuite) TestPresent() {
 						Id: ptr.To("test-record-id"),
 					}, tc.whenRecordCreateError)
 			}
-			resolver := NewResolver(s.dnsAPIMock, s.logger)
+			resolver := NewResolver(nil, "", nil, s.logger)
 			err := resolver.Present(tc.whenChallenge)
 			if tc.thenError != "" {
 				require.Error(s.T(), err)
@@ -431,7 +440,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 					s.dnsAPIMock.EXPECT().DeleteRecord(zoneId, tc.thenDeleteRecordId).Return(tc.whenRecordDeleteError)
 				}
 			}
-			resolver := NewResolver(s.dnsAPIMock, s.logger)
+			resolver := NewResolver(nil, "", nil, s.logger)
 			err := resolver.CleanUp(tc.whenChallenge)
 			if tc.thenError != "" {
 				require.Error(s.T(), err)
@@ -440,5 +449,26 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				require.NoError(s.T(), err)
 			}
 		})
+	}
+}
+
+func createTestDNSFactory(dnsAPIMock *clouddnsmocks.DNSAPI, k8ClientMock *resolvermocks.K8Client) DNSAPIFactory {
+	return func(challengeConfig *apiextensionsv1.JSON, _ K8Client, namespace string) (clouddns.DNSAPI, error) {
+		var config ionosCloudDNSSolverConfig
+
+		if err := json.Unmarshal(challengeConfig.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse config: %w", err)
+		}
+
+		if config.SecretRef == "" {
+			config.SecretRef = defaultSecretName
+		}
+
+		_, err := k8ClientMock.CoreV1().Secrets(namespace).Get(context.Background(), config.SecretRef, v1.GetOptions{})
+		if err != nil {
+			return nil, fmt.Errorf("failed to get secret %s from namespace %s: %w", config.SecretRef, namespace, err)
+		}
+
+		return dnsAPIMock, nil
 	}
 }
