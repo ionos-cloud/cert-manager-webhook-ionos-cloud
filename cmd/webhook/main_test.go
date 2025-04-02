@@ -8,9 +8,7 @@ import (
 
 	acmetest "github.com/cert-manager/cert-manager/test/acme"
 	"github.com/go-logr/logr"
-	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns"
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/resolver"
-	ionoscloud "github.com/ionos-cloud/sdk-go-dns"
 	"go.uber.org/zap"
 	controller_runtime_log "sigs.k8s.io/controller-runtime/pkg/log"
 )
@@ -29,10 +27,7 @@ func TestRunsSuite(t *testing.T) {
 	// this is to remove a log message warning in controller runtime
 	controller_runtime_log.SetLogger(logr.New(controller_runtime_log.NullLogSink{}))
 
-	config := ionoscloud.NewConfigurationFromEnv()
-	dnsClient := ionoscloud.NewAPIClient(config)
-
-	solver := resolver.NewResolver(clouddns.CreateDNSAPI(dnsClient), logger)
+	solver := resolver.NewResolver(nil, "default", nil, logger)
 	fixture := acmetest.NewFixture(solver,
 		// cert-manager adds a dot a the end of the zone name
 		acmetest.SetResolvedZone(zone+"."),
