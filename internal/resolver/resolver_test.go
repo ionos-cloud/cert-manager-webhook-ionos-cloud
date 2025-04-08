@@ -4,6 +4,7 @@ package resolver
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -24,6 +25,7 @@ import (
 var (
 	typeTxtRecord = ptr.To(dnsclient.RecordType("TXT"))
 	emptyConfig   = &apiextensionsv1.JSON{Raw: []byte("{}")}
+	errK8Client   = errors.New("k8 client error")
 )
 
 const testNamespace = "unit-test"
@@ -62,8 +64,36 @@ func (s *ResolverTestSuite) TestPresent() {
 		whenRecordCreateError error
 		whenK8ClientError     error
 		thenError             string
+		whenConfigParseError  bool
 		thenRecordCreateKey   string
 	}{
+		{
+			name:       "invalid config json",
+			givenZones: []dnsclient.ZoneRead{},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+				Config:       &apiextensionsv1.JSON{Raw: []byte("{")},
+			},
+			whenConfigParseError: true,
+			thenError:            "failed to create IONOS Cloud API client: failed to parse config: unexpected end of JSON input",
+		},
+		{
+			name:       "k8 client error",
+			givenZones: []dnsclient.ZoneRead{},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			whenK8ClientError: errK8Client,
+			thenError:         "failed to create IONOS Cloud API client: failed to get secret cert-manager-webhook-ionos-cloud from namespace unit-test: k8 client error",
+		},
 		{
 			name:       "no zones",
 			givenZones: []dnsclient.ZoneRead{},
@@ -73,7 +103,6 @@ func (s *ResolverTestSuite) TestPresent() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenError: "zone 'test.com' not found",
 		},
@@ -95,7 +124,6 @@ func (s *ResolverTestSuite) TestPresent() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenRecordCreateKey: "test-key",
 		},
@@ -126,7 +154,6 @@ func (s *ResolverTestSuite) TestPresent() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenRecordCreateKey: "", // no record should be created
 		},
@@ -157,7 +184,6 @@ func (s *ResolverTestSuite) TestPresent() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenRecordCreateKey: "test-key",
 		},
@@ -171,7 +197,6 @@ func (s *ResolverTestSuite) TestPresent() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenError: "error fetching zones",
 		},
@@ -194,7 +219,6 @@ func (s *ResolverTestSuite) TestPresent() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenError: "error fetching records",
 		},
@@ -217,7 +241,6 @@ func (s *ResolverTestSuite) TestPresent() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenRecordCreateKey: "test-key",
 			thenError:           "error creating record",
@@ -226,26 +249,31 @@ func (s *ResolverTestSuite) TestPresent() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			s.setupMocks()
-			setUpK8ClientExpectations(s.k8Client, tc.whenK8ClientError, s.T())
-			zoneName := strings.TrimSuffix(tc.whenChallenge.ResolvedZone, ".")
-			if tc.givenZones != nil {
-				zoneReadList := dnsclient.ZoneReadList{
-					Items: &tc.givenZones,
+			if !tc.whenConfigParseError {
+				setUpK8ClientExpectations(s.k8Client, tc.whenK8ClientError, s.T())
+			}
+			if !tc.whenConfigParseError && tc.whenK8ClientError == nil {
+				zoneName := strings.TrimSuffix(tc.whenChallenge.ResolvedZone, ".")
+				if tc.givenZones != nil {
+					zoneReadList := dnsclient.ZoneReadList{
+						Items: &tc.givenZones,
+					}
+					s.dnsAPIMock.EXPECT().GetZones(zoneName).Return(zoneReadList, tc.whenZonesReadError)
 				}
-				s.dnsAPIMock.EXPECT().GetZones(zoneName).Return(zoneReadList, tc.whenZonesReadError)
+				if tc.givenRecords != nil {
+					recordName := strings.TrimSuffix(tc.whenChallenge.ResolvedFQDN, "."+tc.whenChallenge.ResolvedZone)
+					s.dnsAPIMock.EXPECT().GetRecords("test-zone-id", recordName).Return(dnsclient.RecordReadList{
+						Items: &tc.givenRecords,
+					}, tc.whenRecordsReadError)
+				}
+				if tc.thenRecordCreateKey != "" {
+					s.dnsAPIMock.EXPECT().CreateTXTRecord("test-zone-id", "_acme-challenge", tc.thenRecordCreateKey).
+						Return(dnsclient.RecordRead{
+							Id: ptr.To("test-record-id"),
+						}, tc.whenRecordCreateError)
+				}
 			}
-			if tc.givenRecords != nil {
-				recordName := strings.TrimSuffix(tc.whenChallenge.ResolvedFQDN, "."+tc.whenChallenge.ResolvedZone)
-				s.dnsAPIMock.EXPECT().GetRecords("test-zone-id", recordName).Return(dnsclient.RecordReadList{
-					Items: &tc.givenRecords,
-				}, tc.whenRecordsReadError)
-			}
-			if tc.thenRecordCreateKey != "" {
-				s.dnsAPIMock.EXPECT().CreateTXTRecord("test-zone-id", "_acme-challenge", tc.thenRecordCreateKey).
-					Return(dnsclient.RecordRead{
-						Id: ptr.To("test-record-id"),
-					}, tc.whenRecordCreateError)
-			}
+
 			resolver := NewResolver(s.k8Client, testNamespace, createTestDNSFactory(s.dnsAPIMock), s.logger)
 			err := resolver.Present(tc.whenChallenge)
 			if tc.thenError != "" {
@@ -268,9 +296,37 @@ func (s *ResolverTestSuite) TestCleanUp() {
 		whenRecordsReadError  error
 		whenRecordDeleteError error
 		whenK8ClientError     error
+		whenConfigParseError  bool
 		thenDeleteRecordId    string
 		thenError             string
 	}{
+		{
+			name:       "invalid config json",
+			givenZones: []dnsclient.ZoneRead{},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+				Config:       &apiextensionsv1.JSON{Raw: []byte("{")},
+			},
+			whenConfigParseError: true,
+			thenError:            "failed to create IONOS Cloud API client: failed to parse config: unexpected end of JSON input",
+		},
+		{
+			name:       "k8 client error",
+			givenZones: []dnsclient.ZoneRead{},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			whenK8ClientError: errK8Client,
+			thenError:         "failed to create IONOS Cloud API client: failed to get secret cert-manager-webhook-ionos-cloud from namespace unit-test: k8 client error",
+		},
 		{
 			name:       "no zones",
 			givenZones: []dnsclient.ZoneRead{},
@@ -280,7 +336,6 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenError:          "", // no error
 			thenDeleteRecordId: "", // no record to delete
@@ -303,7 +358,6 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenError:          "", // no error
 			thenDeleteRecordId: "", // no record to delete
@@ -335,7 +389,6 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenError:          "", // no error
 			thenDeleteRecordId: "", // no record to delete
@@ -350,7 +403,6 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenError: "error fetching zones",
 		},
@@ -373,7 +425,6 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenError: "error fetching records",
 		},
@@ -404,7 +455,6 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			whenRecordDeleteError: fmt.Errorf("error deleting record"),
 			thenError:             "error deleting record",
@@ -437,7 +487,6 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				DNSName:      "*.test.com",
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
-				Config:       emptyConfig,
 			},
 			thenDeleteRecordId: "test-record-id",
 		},
@@ -445,22 +494,26 @@ func (s *ResolverTestSuite) TestCleanUp() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			s.setupMocks()
-			setUpK8ClientExpectations(s.k8Client, tc.whenK8ClientError, s.T())
-			zoneName := strings.TrimSuffix(tc.whenChallenge.ResolvedZone, ".")
-			zoneReadList := dnsclient.ZoneReadList{
-				Items: &tc.givenZones,
-			}
-			s.dnsAPIMock.EXPECT().GetZones(zoneName).Return(zoneReadList, tc.whenZonesReadError)
-			if len(tc.givenZones) > 0 {
-				zoneId := *tc.givenZones[0].GetId()
-				if tc.givenRecords != nil {
-					recordName := strings.TrimSuffix(tc.whenChallenge.ResolvedFQDN, "."+tc.whenChallenge.ResolvedZone)
-					s.dnsAPIMock.EXPECT().GetRecords(zoneId, recordName).Return(dnsclient.RecordReadList{
-						Items: &tc.givenRecords,
-					}, tc.whenRecordsReadError)
-				}
-				if tc.thenDeleteRecordId != "" {
-					s.dnsAPIMock.EXPECT().DeleteRecord(zoneId, tc.thenDeleteRecordId).Return(tc.whenRecordDeleteError)
+			if !tc.whenConfigParseError {
+				setUpK8ClientExpectations(s.k8Client, tc.whenK8ClientError, s.T())
+				if tc.whenK8ClientError == nil {
+					zoneName := strings.TrimSuffix(tc.whenChallenge.ResolvedZone, ".")
+					zoneReadList := dnsclient.ZoneReadList{
+						Items: &tc.givenZones,
+					}
+					s.dnsAPIMock.EXPECT().GetZones(zoneName).Return(zoneReadList, tc.whenZonesReadError)
+					if len(tc.givenZones) > 0 {
+						zoneId := *tc.givenZones[0].GetId()
+						if tc.givenRecords != nil {
+							recordName := strings.TrimSuffix(tc.whenChallenge.ResolvedFQDN, "."+tc.whenChallenge.ResolvedZone)
+							s.dnsAPIMock.EXPECT().GetRecords(zoneId, recordName).Return(dnsclient.RecordReadList{
+								Items: &tc.givenRecords,
+							}, tc.whenRecordsReadError)
+						}
+						if tc.thenDeleteRecordId != "" {
+							s.dnsAPIMock.EXPECT().DeleteRecord(zoneId, tc.thenDeleteRecordId).Return(tc.whenRecordDeleteError)
+						}
+					}
 				}
 			}
 			resolver := NewResolver(s.k8Client, testNamespace, createTestDNSFactory(s.dnsAPIMock), s.logger)

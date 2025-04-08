@@ -216,8 +216,10 @@ func (s *ionosCloudDnsProviderResolver) newDNSAPIFromK8Secret(
 	challengeConfig *apiextensionsv1.JSON) (clouddns.DNSAPI, error) {
 	var config ionosCloudDNS01SolverConfig
 
-	if err := json.Unmarshal(challengeConfig.Raw, &config); err != nil {
-		return nil, fmt.Errorf("failed to parse config: %w", err)
+	if challengeConfig != nil && len(challengeConfig.Raw) > 0 {
+		if err := json.Unmarshal(challengeConfig.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse config: %w", err)
+		}
 	}
 
 	if config.SecretRef == "" {
