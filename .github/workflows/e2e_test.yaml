@@ -25,7 +25,14 @@ jobs:
             --set crds.enabled=true \
              --set 'extraArgs={--dns01-recursive-nameservers-only,--dns01-recursive-nameservers=8.8.8.8:53\,1.1.1.1:53}' \
             --version ${{ matrix.cert_manager_version }}
-          # we have to make sure we use the latest code
+        - name: Setup go
+          uses: actions/setup-go@v5
+          with:
+            go-version: stable
+        - name: build binary
+          run: |
+            go build -o cert-manager-webhook-ionos-cloud cmd/webhook/main.go
+          # we have to make sure we use the latest code in the chart
         - name: build docker image
           run: |
             docker build . -t cert-manager-e2e-tests:${{ github.run_number }}
