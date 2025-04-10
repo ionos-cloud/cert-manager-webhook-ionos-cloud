@@ -8,14 +8,13 @@
 # here is recommended.
 groupName: acme.ionos.com
 
-ionosCredentialsSecretName: cert-manager-webhook-ionos-cloud
-
 certManager: 
   serviceAccountName: cert-manager
   namespace: cert-manager
 
 image:
   tag: latest
+  repository: ghcr.io/ionos-cloud/cert-manager-webhook-ionos-cloud
   pullPolicy: IfNotPresent
 
 nameOverride: ""
