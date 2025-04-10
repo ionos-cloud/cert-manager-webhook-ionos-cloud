@@ -25,15 +25,24 @@ jobs:
             --set crds.enabled=true \
              --set 'extraArgs={--dns01-recursive-nameservers-only,--dns01-recursive-nameservers=8.8.8.8:53\,1.1.1.1:53}' \
             --version ${{ matrix.cert_manager_version }}
+          # we have to make sure we use the latest code
+        - name: build docker image
+          run: |
+            docker build . -t cert-manager-e2e-tests:${{ github.run_number }}
+        - name: load image into kind
+          run: |
+            kind load docker-image cert-manager-e2e-tests:${{ github.run_number }}
+        - name: install cert-manager-webhook-ionos-cloud chart
+          run: |
+            helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-cloud \
+            --image.repository cert-manager-e2e-tests \
+            --image.tag ${{ github.run_number }}
+            kubectl wait --timeout=30s --for=jsonpath='{.status.readyReplicas}'=1 deployment/cert-manager-webhook-ionos-cloud
         - name: create ionos token secret
           env:
               IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
           run: |
             kubectl create secret generic cert-manager-webhook-ionos-cloud --from-literal=auth-token="$(echo $IONOS_TOKEN)"
-        - name: install cert-manager-webhook-ionos-cloud chart
-          run: |
-            helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-cloud
-            kubectl wait --timeout=30s --for=jsonpath='{.status.readyReplicas}'=1 deployment/cert-manager-webhook-ionos-cloud
         - name: create issuer
           run: |
             kubectl apply -f .github/test-manifests/issuer.yaml
