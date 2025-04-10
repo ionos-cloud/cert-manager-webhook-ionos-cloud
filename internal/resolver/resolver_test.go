@@ -19,6 +19,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 )
 
@@ -85,11 +86,12 @@ func (s *ResolverTestSuite) TestPresent() {
 			name:       "k8 client error",
 			givenZones: []dnsclient.ZoneRead{},
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			whenK8ClientError: errK8Client,
 			thenError:         "failed to create IONOS Cloud API client: failed to get secret cert-manager-webhook-ionos-cloud from namespace unit-test: k8 client error",
@@ -98,11 +100,12 @@ func (s *ResolverTestSuite) TestPresent() {
 			name:       "no zones",
 			givenZones: []dnsclient.ZoneRead{},
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenError: "zone 'test.com' not found",
 		},
@@ -119,11 +122,12 @@ func (s *ResolverTestSuite) TestPresent() {
 			},
 			givenRecords: []dnsclient.RecordRead{},
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenRecordCreateKey: "test-key",
 		},
@@ -149,11 +153,12 @@ func (s *ResolverTestSuite) TestPresent() {
 				},
 			},
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenRecordCreateKey: "", // no record should be created
 		},
@@ -179,11 +184,12 @@ func (s *ResolverTestSuite) TestPresent() {
 				},
 			},
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenRecordCreateKey: "test-key",
 		},
@@ -192,11 +198,12 @@ func (s *ResolverTestSuite) TestPresent() {
 			givenZones:         []dnsclient.ZoneRead{},
 			whenZonesReadError: fmt.Errorf("error fetching zones"),
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenError: "error fetching zones",
 		},
@@ -214,11 +221,12 @@ func (s *ResolverTestSuite) TestPresent() {
 			givenRecords:         []dnsclient.RecordRead{},
 			whenRecordsReadError: fmt.Errorf("error fetching records"),
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenError: "error fetching records",
 		},
@@ -236,11 +244,12 @@ func (s *ResolverTestSuite) TestPresent() {
 			givenRecords:          []dnsclient.RecordRead{},
 			whenRecordCreateError: fmt.Errorf("error creating record"),
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenRecordCreateKey: "test-key",
 			thenError:           "error creating record",
@@ -274,7 +283,8 @@ func (s *ResolverTestSuite) TestPresent() {
 				}
 			}
 
-			resolver := NewResolver(s.k8Client, testNamespace, createTestDNSFactory(s.dnsAPIMock), s.logger)
+			resolver := NewResolver(createTestK8Factory(s.k8Client), createTestDNSFactory(s.dnsAPIMock), s.logger)
+			resolver.Initialize(&rest.Config{}, nil)
 			err := resolver.Present(tc.whenChallenge)
 			if tc.thenError != "" {
 				require.Error(s.T(), err)
@@ -318,11 +328,12 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			name:       "k8 client error",
 			givenZones: []dnsclient.ZoneRead{},
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			whenK8ClientError: errK8Client,
 			thenError:         "failed to create IONOS Cloud API client: failed to get secret cert-manager-webhook-ionos-cloud from namespace unit-test: k8 client error",
@@ -331,11 +342,12 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			name:       "no zones",
 			givenZones: []dnsclient.ZoneRead{},
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenError:          "", // no error
 			thenDeleteRecordId: "", // no record to delete
@@ -353,11 +365,12 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			},
 			givenRecords: []dnsclient.RecordRead{},
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenError:          "", // no error
 			thenDeleteRecordId: "", // no record to delete
@@ -384,11 +397,12 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				},
 			},
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenError:          "", // no error
 			thenDeleteRecordId: "", // no record to delete
@@ -398,11 +412,12 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			givenZones:         []dnsclient.ZoneRead{},
 			whenZonesReadError: fmt.Errorf("error fetching zones"),
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenError: "error fetching zones",
 		},
@@ -420,11 +435,12 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			givenRecords:         []dnsclient.RecordRead{},
 			whenRecordsReadError: fmt.Errorf("error fetching records"),
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenError: "error fetching records",
 		},
@@ -450,11 +466,12 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				},
 			},
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			whenRecordDeleteError: fmt.Errorf("error deleting record"),
 			thenError:             "error deleting record",
@@ -482,11 +499,12 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				},
 			},
 			whenChallenge: &v1alpha1.ChallengeRequest{
-				UID:          "test-UID",
-				Key:          "test-key",
-				DNSName:      "*.test.com",
-				ResolvedZone: "test.com.",
-				ResolvedFQDN: "_acme-challenge.test.com.",
+				UID:               "test-UID",
+				Key:               "test-key",
+				DNSName:           "*.test.com",
+				ResolvedZone:      "test.com.",
+				ResolvedFQDN:      "_acme-challenge.test.com.",
+				ResourceNamespace: testNamespace,
 			},
 			thenDeleteRecordId: "test-record-id",
 		},
@@ -516,7 +534,8 @@ func (s *ResolverTestSuite) TestCleanUp() {
 					}
 				}
 			}
-			resolver := NewResolver(s.k8Client, testNamespace, createTestDNSFactory(s.dnsAPIMock), s.logger)
+			resolver := NewResolver(createTestK8Factory(s.k8Client), createTestDNSFactory(s.dnsAPIMock), s.logger)
+			resolver.Initialize(&rest.Config{}, nil)
 			err := resolver.CleanUp(tc.whenChallenge)
 			if tc.thenError != "" {
 				require.Error(s.T(), err)
@@ -531,6 +550,12 @@ func (s *ResolverTestSuite) TestCleanUp() {
 func createTestDNSFactory(dnsAPIMock *mocks.DNSAPI) DNSAPIFactory {
 	return func(_ string) clouddns.DNSAPI {
 		return dnsAPIMock
+	}
+}
+
+func createTestK8Factory(k8Client *mocks.K8Client) K8ClientFactory {
+	return func(_ *rest.Config) (K8Client, error) {
+		return k8Client, nil
 	}
 }
 

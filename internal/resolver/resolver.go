@@ -14,9 +14,9 @@ import (
 	"go.uber.org/zap"
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
 	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
@@ -24,35 +24,32 @@ const (
 	defaultAuthTokenSecretKey = "auth-token"
 )
 
-type K8Client2 interface {
-	client.Reader
-}
-
 type K8Client interface {
 	CoreV1() corev1.CoreV1Interface
 }
 
 type DNSAPIFactory func(token string) clouddns.DNSAPI
 
+type K8ClientFactory func(cfg *rest.Config) (K8Client, error)
+
 type ionosCloudDNS01SolverConfig struct {
 	SecretRef          string `json:"secretRef"`
 	AuthTokenSecretKey string `json:"authTokenSecretKey"`
 }
 
-func NewResolver(k8Client K8Client, namespace string, dnsAPIFactory DNSAPIFactory, logger *zap.Logger) webhook.Solver {
+func NewResolver(k8ClientFactory K8ClientFactory, dnsAPIFactory DNSAPIFactory, logger *zap.Logger) webhook.Solver {
 	return &ionosCloudDnsProviderResolver{
-		k8Client:      k8Client,
-		namespace:     namespace,
-		dnsAPIFactory: dnsAPIFactory,
-		logger:        logger,
+		k8ClientFactory: k8ClientFactory,
+		dnsAPIFactory:   dnsAPIFactory,
+		logger:          logger,
 	}
 }
 
 type ionosCloudDnsProviderResolver struct {
-	k8Client      K8Client
-	namespace     string
-	dnsAPIFactory DNSAPIFactory
-	logger        *zap.Logger
+	k8ClientFactory K8ClientFactory
+	dnsAPIFactory   DNSAPIFactory
+	k8Client        K8Client
+	logger          *zap.Logger
 }
 
 // Name is used as the name for this DNS solver when referencing it on the ACME
@@ -75,7 +72,7 @@ func (s *ionosCloudDnsProviderResolver) Present(ch *v1alpha1.ChallengeRequest) e
 		zap.String("dnsName", ch.DNSName), zap.String("resolvedZone", ch.ResolvedZone), zap.String("resolvedFQDN",
 			ch.ResolvedFQDN))
 
-	dnsAPI, err := s.newDNSAPIFromK8Secret(ch.Config)
+	dnsAPI, err := s.newDNSAPIFromK8Secret(ch.ResourceNamespace, ch.Config)
 	if err != nil {
 		return fmt.Errorf("failed to create IONOS Cloud API client: %w", err)
 	}
@@ -94,7 +91,7 @@ func (s *ionosCloudDnsProviderResolver) Present(ch *v1alpha1.ChallengeRequest) e
 // This is in order to facilitate multiple DNS validations for the same domain
 // concurrently.
 func (s *ionosCloudDnsProviderResolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
-	dnsAPI, err := s.newDNSAPIFromK8Secret(ch.Config)
+	dnsAPI, err := s.newDNSAPIFromK8Secret(ch.ResourceNamespace, ch.Config)
 	if err != nil {
 		return fmt.Errorf("failed to create IONOS Cloud API client: %w", err)
 	}
@@ -121,6 +118,11 @@ func (s *ionosCloudDnsProviderResolver) CleanUp(ch *v1alpha1.ChallengeRequest) e
 // where a SIGTERM or similar signal is sent to the webhook process.
 func (s *ionosCloudDnsProviderResolver) Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error {
 	s.logger.Info("IONOS Cloud resolver initialized")
+	k8Client, err := s.k8ClientFactory(kubeClientConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create k8 client: %w", err)
+	}
+	s.k8Client = k8Client
 	return nil
 }
 
@@ -212,7 +214,7 @@ func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeReque
 	return nil
 }
 
-func (s *ionosCloudDnsProviderResolver) newDNSAPIFromK8Secret(
+func (s *ionosCloudDnsProviderResolver) newDNSAPIFromK8Secret(namespace string,
 	challengeConfig *apiextensionsv1.JSON) (clouddns.DNSAPI, error) {
 	var config ionosCloudDNS01SolverConfig
 
@@ -230,9 +232,9 @@ func (s *ionosCloudDnsProviderResolver) newDNSAPIFromK8Secret(
 		config.AuthTokenSecretKey = defaultAuthTokenSecretKey
 	}
 
-	secret, err := s.k8Client.CoreV1().Secrets(s.namespace).Get(context.Background(), config.SecretRef, v1.GetOptions{})
+	secret, err := s.k8Client.CoreV1().Secrets(namespace).Get(context.Background(), config.SecretRef, v1.GetOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get secret %s from namespace %s: %w", config.SecretRef, s.namespace, err)
+		return nil, fmt.Errorf("failed to get secret %s from namespace %s: %w", config.SecretRef, namespace, err)
 	}
 
 	return s.dnsAPIFactory(string(secret.Data[config.AuthTokenSecretKey])), nil
@@ -250,4 +252,8 @@ func DefaultDNSAPIFactory(token string) clouddns.DNSAPI {
 	return clouddns.CreateDNSAPI(ionoscloud.NewAPIClient(
 		ionoscloud.NewConfiguration("", "", token, "")),
 	)
+}
+
+func DefaultK8FactoryFactory(config *rest.Config) (K8Client, error) {
+	return kubernetes.NewForConfig(config)
 }

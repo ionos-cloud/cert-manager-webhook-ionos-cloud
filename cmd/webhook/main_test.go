@@ -27,12 +27,13 @@ func TestRunsSuite(t *testing.T) {
 	// this is to remove a log message warning in controller runtime
 	controller_runtime_log.SetLogger(logr.New(controller_runtime_log.NullLogSink{}))
 
-	solver := resolver.NewResolver(nil, "default", nil, logger)
+	solver := resolver.NewResolver(resolver.DefaultK8FactoryFactory,
+		resolver.DefaultDNSAPIFactory, logger)
 	fixture := acmetest.NewFixture(solver,
 		// cert-manager adds a dot a the end of the zone name
 		acmetest.SetResolvedZone(zone+"."),
 		acmetest.SetResolvedFQDN("_acme-challenge."+zone+"."),
-		acmetest.SetConfig("testdata"),
+		acmetest.SetManifestPath("./testdata"),
 	)
 	fixture.RunConformance(t)
 }
