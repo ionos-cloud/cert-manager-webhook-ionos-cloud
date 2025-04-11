@@ -47,7 +47,8 @@ jobs:
             --set image.tag=${{ github.run_number }}
             sleep 10s
             kubectl get po
-            kubectl describe deployment cert-manager-webhook-ionos-cert-manager-webhook-ionos-cloud
+            kubectl describe po -l app=cert-manager-webhook-ionos-cloud
+            kubectl describe deployment cert-manager-webhook-ionos-cloud
             kubectl logs -l app=cert-manager-webhook-ionos-cloud
             kubectl wait --timeout=30s --for=jsonpath='{.status.readyReplicas}'=1 deployment/cert-manager-webhook-ionos-cloud
         - name: create ionos token secret
