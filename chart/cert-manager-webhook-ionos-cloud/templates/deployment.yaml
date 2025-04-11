@@ -27,7 +27,7 @@ spec:
           env:
             - name: GROUP_NAME
               value: {{ .Values.groupName | quote }}
-            - name: POD_NAMESPACE
+            - name: NAMESPACE
               valueFrom:
                 fieldRef:
                   apiVersion: v1
