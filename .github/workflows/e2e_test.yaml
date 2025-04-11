@@ -32,11 +32,11 @@ jobs:
             go-version: stable
         - name: build binary
           run: |
-            go build -o cert-manager-webhook-ionos-cloud cmd/webhook/main.go
+            CGO_ENABLED=0 go build -ldflags "-s -w" -o ./cert-manager-webhook-ionos-cloud -v cmd/webhook/main.go
           # we have to make sure we use the latest code in the chart
         - name: build docker image
           run: |
-            docker build . -t cert-manager-e2e-tests:${{ github.run_number }}
+            docker buildx build --platform linux/amd64 -t cert-manager-e2e-tests:${{ github.run_number }} .
         - name: load image into kind
           run: |
             kind load docker-image cert-manager-e2e-tests:${{ github.run_number }} -n chart-testing
