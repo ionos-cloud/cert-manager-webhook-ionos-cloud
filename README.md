@@ -54,9 +54,6 @@ By convention, cert-manager is deployed in a namespace named `cert-manager`. The
       --from-literal=auth-token=<IONOS CLOUD AUTH TOKEN>
     ```
 
-> [!IMPORTANT]
-> If you are planning to use a CluserIssuer, you need to add the following argument to the cert-manager: `----cluster-resource-namespace=DEPLOYMENT_NAMESPACE` where the `DEPLOYMENT_NAMESPACE` is the namespace where this webhook is deployed. This is because the service account RBAC is scoped to fetch secrets only from the webhook namespace. If a cluster issuer is used, cert-manager defaults to creating resource of type `acme.ionos.com` in its own namespace, which will cause a failure when reading the secret containing the token.
-
 4. ***Configuration of ClusterIssuer/Issuer:***
 
 The first step of using cert-manager is creating an Issuer or ClusterIssuer. 
@@ -89,7 +86,7 @@ The following webhook config options are available:
 
 | Name        | Description           | Required  | Default  |
 | :-------------: |:-------------:| :-----:| :-----:|
-| secretRef     | the secret name that contains the IONOS token, it should be in the same namespace as the cert-manager  |   no | cert-manager-webhook-ionos-cloud |
+| secretRef     | the secret name that contains the IONOS token, it should be in the same namespace as the webhook deployment  |   no | cert-manager-webhook-ionos-cloud |
 | authTokenSecretKey     | the secret key name that contains the secret (under `.data`)  |   no | auth-token |
    
 5. ***Check with a demonstration of Ingress Integration with Wildcard SSL/TLS Certificate Generation***

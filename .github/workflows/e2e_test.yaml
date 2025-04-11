@@ -38,7 +38,7 @@ jobs:
             docker build . -t cert-manager-e2e-tests:${{ github.run_number }}
         - name: load image into kind
           run: |
-            kind load docker-image cert-manager-e2e-tests:${{ github.run_number }}
+            kind load docker-image cert-manager-e2e-tests:${{ github.run_number }} -n chart-testing
         - name: install cert-manager-webhook-ionos-cloud chart
           run: |
             helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-cloud \

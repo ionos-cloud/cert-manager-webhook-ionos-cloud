@@ -61,7 +61,6 @@ spec:
 ## Important:
 
 - Before engaging into DNS-01, cert-manager does a DNS pre-check (SOA and NS records). Depending on your environment, you may see a failure in the cert-manager logs with the following message: `error When querying the SOA record for the domain...`. To fix the issue, you need to add the following arguments to the cert-manager: `--dns01-recursive-nameservers-only`, `--dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53`. For more details, check out the official documentation: [https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check](https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check)
-- If you are planning to use a CluserIssuer, you need to add the following argument to the cert-manager: `----cluster-resource-namespace=DEPLOYMENT_NAMESPACE` where the `DEPLOYMENT_NAMESPACE` is the namespace where this webhook is deployed. This is because the service account RBAC is scoped to fetch secrets only from the webhook namespace. If a cluster issuer is used, cert-manager defaults to creating resource of type `acme.ionos.com` in its own namespace, which will cause a failure when reading the secret containing the token.
 
 ## Parameters
 
