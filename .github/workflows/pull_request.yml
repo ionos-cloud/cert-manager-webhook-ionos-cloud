@@ -1,7 +1,8 @@
 name: Pull Request Go Releaser
 
 on:
-  pull_request:
+  #temporary
+  #pull_request:
   push:
     branches:
       - main
