@@ -8,6 +8,6 @@ spec:
   issuerRef:
     name: letsencrypt-ionos-e2e
     kind: Issuer
-  commonName: $TEST_ZONE_NAME
+  commonName: $PREFIX.$TEST_ZONE_NAME
   dnsNames:
-    - $TEST_ZONE_NAME
+    - $PREFIX.$TEST_ZONE_NAME

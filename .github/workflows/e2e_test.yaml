@@ -45,11 +45,6 @@ jobs:
             helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-cloud \
             --set image.repository=cert-manager-e2e-tests \
             --set image.tag=${{ github.run_number }}
-            sleep 10s
-            kubectl get po
-            kubectl describe po -l app=cert-manager-webhook-ionos-cloud
-            kubectl describe deployment cert-manager-webhook-ionos-cloud
-            kubectl logs -l app=cert-manager-webhook-ionos-cloud
             kubectl wait --timeout=30s --for=jsonpath='{.status.readyReplicas}'=1 deployment/cert-manager-webhook-ionos-cloud
         - name: create ionos token secret
           env:
@@ -60,11 +55,32 @@ jobs:
           run: |
             kubectl apply -f .github/test-manifests/issuer.yaml
             kubectl wait --timeout=10s --for=condition=Ready=True issuer/letsencrypt-ionos-e2e
+        - name: generate random zone prefix and create a sub-zone
+          id: zone-create
+          env:
+            TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
+            IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
+          run: |
+            PREFIX=$(uuid)
+            ZONE_ID=$(curl -v -H "Authorization: Bearer $IONOS_TOKEN" --json \
+            "{\"properties\":{\"zoneName\":\"$PREFIX.$TEST_ZONE_NAME\",\"description\":\"used for e2e testing for cert-manager webhook\",\"enabled\":true}}" \
+            https://dns.de-fra.ionos.com/zones | jq .id)
+            echo $PREFIX
+            echo $ZONE_ID
+            echo "prefix=$PREFIX" >> "$GITHUB_OUTPUT"
+            echo "zone_id=$ZONE_ID" >> "$GITHUB_OUTPUT"
         - name: create certificate and check issuance
           env:
               TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
+              PREFIX: ${{ steps.zone-create.outputs.prefix }}
           run: |
             cat .github/test-manifests/certificate.tmpl.yaml | envsubst | kubectl apply -f -
             kubectl wait --timeout=2m --for=condition=Ready=True certificate/certificate-ionos-with-dns-01-test
+        - name: delete the sub-zone
+          env:
+              ZONE_ID: ${{ steps.zone-create.outputs.zone_id }}
+              IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
+          run: |
+            curl -XDELETE -v -H "Authorization: Bearer $IONOS_TOKEN" "https://dns.de-fra.ionos.com/zones/$ZONE_ID"
           
             
