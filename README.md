@@ -28,17 +28,8 @@ Before proceeding, ensure you have the following:
 - kubectl configured to access your Kubernetes cluster
 
 ## Usage
-
-1. ***Initiation of IONOS Cloud Authentication Token Secret:***
-    See [IONOS Cloud Token management](https://docs.ionos.com/cloud/set-up-ionos-cloud/management/token-management) how to get a token.
-
-    ```bash
-    kubectl create secret generic cert-manager-webhook-ionos-cloud \
-      --namespace=cert-manager \
-      --from-literal=auth-token=<IONOS CLOUD AUTH TOKEN>
-    ```
    
-2. ***Install the webhook server***
+1. ***Install the webhook server***
     ```bash
     helm repo add cert-manager-webhook-ionos-cloud https://ionos-cloud.github.io/cert-manager-webhook-ionos-cloud
     helm upgrade cert-manager-webhook-ionos-cloud \
@@ -50,9 +41,18 @@ Before proceeding, ensure you have the following:
 > Before engaging into DNS-01, cert-manager does a DNS pre-check (SOA and NS records). Depending on your environment, you may see a failure in the cert-manager logs with the following message: `error When querying the SOA record for the domain...`. To fix the issue, you need to add the following arguments to the cert-manager: `--dns01-recursive-nameservers-only`, `--dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53`. For more details, check out the official documentation: [https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check](https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check)
 
 
-3. ***Using a custom cert-manager namespace (optional)***:
+2. ***Using a custom cert-manager namespace (optional)***:
 
 By convention, cert-manager is deployed in a namespace named `cert-manager`. The chart assumes this default and uses this value to add privileges to the cert-manager service account to enable the creation of resources of type "ionos-cloud". If you are deploying the cert-manager chart in a different namespace, you need to use the `certManager.namespace` chart value to set the name of the namespace where cert-manager is deployed. (e.g using `--set certManager.namespace=custom_namespace`)
+
+3. ***Initiation of IONOS Cloud Authentication Token Secret:***
+    See [IONOS Cloud Token management](https://docs.ionos.com/cloud/set-up-ionos-cloud/management/token-management) how to get a token.
+
+    ```bash
+    kubectl create secret generic cert-manager-webhook-ionos-cloud \
+      --namespace=cert-manager \
+      --from-literal=auth-token=<IONOS CLOUD AUTH TOKEN>
+    ```
 
 4. ***Configuration of ClusterIssuer/Issuer:***
 
@@ -75,8 +75,19 @@ spec:
         webhook:
           solverName: ionos-cloud
           groupName: acme.ionos.com
+          config:
+            #optional, defaults to cert-manager-webhook-ionos-cloud
+            secretRef: cert-manager-webhook-ionos-cloud
+            #optional, defaults to auth-token
+            authTokenSecretKey: auth-token
 ```
 
+The following webhook config options are available:
+
+| Name        | Description           | Required  | Default  |
+| :-------------: |:-------------:| :-----:| :-----:|
+| secretRef     | the secret name that contains the IONOS token, it should be in the same namespace as the webhook deployment  |   no | cert-manager-webhook-ionos-cloud |
+| authTokenSecretKey     | the secret key name that contains the secret (under `.data`)  |   no | auth-token |
    
 5. ***Check with a demonstration of Ingress Integration with Wildcard SSL/TLS Certificate Generation***
    Given the preceding configuration, it is possible to exploit the capabilities of the Issuer or ClusterIssuer to

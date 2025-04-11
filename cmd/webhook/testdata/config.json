@@ -1,1 +1,4 @@
-{}
+{
+    "secretRef":"test-ionos-cloud-credentials",
+    "authTokenSecretKey": "token"
+}

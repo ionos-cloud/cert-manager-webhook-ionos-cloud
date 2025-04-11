@@ -2,33 +2,56 @@ package resolver
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns"
-	dnsclient "github.com/ionos-cloud/sdk-go-dns"
-	"k8s.io/utils/ptr"
+	ionoscloud "github.com/ionos-cloud/sdk-go-dns"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook"
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
 	"go.uber.org/zap"
+	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/kubernetes"
+	corev1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 )
 
-var typeTxtRecord = ptr.To(dnsclient.RecordType("TXT"))
+const (
+	defaultSecretName         = "cert-manager-webhook-ionos-cloud"
+	defaultAuthTokenSecretKey = "auth-token"
+)
 
-func NewResolver(client clouddns.DNSAPI, logger *zap.Logger) webhook.Solver {
+type K8Client interface {
+	CoreV1() corev1.CoreV1Interface
+}
+
+type DNSAPIFactory func(token string) clouddns.DNSAPI
+
+type K8ClientFactory func(cfg *rest.Config) (K8Client, error)
+
+type ionosCloudDNS01SolverConfig struct {
+	SecretRef          string `json:"secretRef"`
+	AuthTokenSecretKey string `json:"authTokenSecretKey"`
+}
+
+func NewResolver(namespace string, k8ClientFactory K8ClientFactory, dnsAPIFactory DNSAPIFactory, logger *zap.Logger) webhook.Solver {
 	return &ionosCloudDnsProviderResolver{
-		ctx:    context.Background(),
-		client: client,
-		logger: logger,
+		k8ClientFactory: k8ClientFactory,
+		namespace:       namespace,
+		dnsAPIFactory:   dnsAPIFactory,
+		logger:          logger,
 	}
 }
 
 type ionosCloudDnsProviderResolver struct {
-	ctx    context.Context
-	client clouddns.DNSAPI
-	logger *zap.Logger
+	k8ClientFactory K8ClientFactory
+	namespace       string
+	dnsAPIFactory   DNSAPIFactory
+	k8Client        K8Client
+	logger          *zap.Logger
 }
 
 // Name is used as the name for this DNS solver when referencing it on the ACME
@@ -50,11 +73,17 @@ func (s *ionosCloudDnsProviderResolver) Present(ch *v1alpha1.ChallengeRequest) e
 	s.logger.Debug("Received dns challenge request", zap.String("uid", string(ch.UID)), zap.String("key", ch.Key),
 		zap.String("dnsName", ch.DNSName), zap.String("resolvedZone", ch.ResolvedZone), zap.String("resolvedFQDN",
 			ch.ResolvedFQDN))
-	zoneId, err := s.findZone(ch, true)
+
+	dnsAPI, err := s.newDNSAPIFromK8Secret(ch.Config)
+	if err != nil {
+		return fmt.Errorf("failed to create IONOS Cloud API client: %w", err)
+	}
+
+	zoneId, err := s.findZone(ch, true, dnsAPI)
 	if err != nil {
 		return err
 	}
-	return s.findOrCreateRecord(ch, zoneId)
+	return s.findOrCreateRecord(ch, zoneId, dnsAPI)
 }
 
 // CleanUp should delete the relevant TXT record from the DNS provider console.
@@ -64,7 +93,12 @@ func (s *ionosCloudDnsProviderResolver) Present(ch *v1alpha1.ChallengeRequest) e
 // This is in order to facilitate multiple DNS validations for the same domain
 // concurrently.
 func (s *ionosCloudDnsProviderResolver) CleanUp(ch *v1alpha1.ChallengeRequest) error {
-	zoneId, err := s.findZone(ch, false)
+	dnsAPI, err := s.newDNSAPIFromK8Secret(ch.Config)
+	if err != nil {
+		return fmt.Errorf("failed to create IONOS Cloud API client: %w", err)
+	}
+
+	zoneId, err := s.findZone(ch, false, dnsAPI)
 	if err != nil {
 		return err
 	}
@@ -72,7 +106,7 @@ func (s *ionosCloudDnsProviderResolver) CleanUp(ch *v1alpha1.ChallengeRequest) e
 		s.logger.Info("zone not found, nothing to clean up", zap.String("zoneName", ch.ResolvedZone))
 		return nil
 	}
-	return s.deleteRecord(ch, zoneId)
+	return s.deleteRecord(ch, zoneId, dnsAPI)
 }
 
 // Initialize will be called when the webhook first starts.
@@ -86,35 +120,41 @@ func (s *ionosCloudDnsProviderResolver) CleanUp(ch *v1alpha1.ChallengeRequest) e
 // where a SIGTERM or similar signal is sent to the webhook process.
 func (s *ionosCloudDnsProviderResolver) Initialize(kubeClientConfig *rest.Config, stopCh <-chan struct{}) error {
 	s.logger.Info("IONOS Cloud resolver initialized")
+	k8Client, err := s.k8ClientFactory(kubeClientConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create k8 client: %w", err)
+	}
+	s.k8Client = k8Client
 	return nil
 }
 
-func (s *ionosCloudDnsProviderResolver) findZone(ch *v1alpha1.ChallengeRequest, shouldFind bool) (string, error) {
+func (s *ionosCloudDnsProviderResolver) findZone(ch *v1alpha1.ChallengeRequest, shouldFind bool, client clouddns.DNSAPI) (string, error) {
 	// fetch zone
 	zoneName := zoneNameFromChallenge(ch)
 	s.logger.Debug("find zone...", zap.String("zoneName", zoneName))
-	zoneList, err := s.client.GetZones(zoneName)
+	zoneList, err := client.GetZones(zoneName)
 	if err != nil {
 		s.logger.Error("Error fetching zone", zap.Error(err))
 		return "", err
 	}
-	if zoneList.Items == nil || len(*zoneList.Items) == 0 {
-		s.logger.Info("zone not found", zap.String("zoneName", zoneName))
-		if shouldFind {
-			return "", fmt.Errorf("zone '%s' not found", zoneName)
+	for _, zone := range *zoneList.Items {
+		if *zone.Properties.ZoneName == zoneName {
+			s.logger.Info("zone found", zap.String("zoneName", zoneName), zap.String("zoneId", *zone.Id))
+			return *zone.Id, nil
 		}
-		return "", nil
 	}
-	zone := (*zoneList.Items)[0]
-	s.logger.Info("zone found", zap.String("zoneName", zoneName), zap.String("zoneId", *zone.Id))
-	return *zone.Id, nil
+
+	if shouldFind {
+		return "", fmt.Errorf("zone '%s' not found", zoneName)
+	}
+	return "", nil
 }
 
-func (s *ionosCloudDnsProviderResolver) findOrCreateRecord(ch *v1alpha1.ChallengeRequest, zoneId string) error {
+func (s *ionosCloudDnsProviderResolver) findOrCreateRecord(ch *v1alpha1.ChallengeRequest, zoneId string, client clouddns.DNSAPI) error {
 	recordName := recordNameFromChallenge(ch)
 	s.logger.Debug("find txt record...", zap.String("recordName", recordName), zap.String("fqdn", ch.ResolvedFQDN),
 		zap.String("zoneId", zoneId))
-	recordList, err := s.client.GetRecords(zoneId, recordName)
+	recordList, err := client.GetRecords(zoneId, recordName)
 	if err != nil {
 		s.logger.Error("Error fetching record", zap.Error(err))
 		return err
@@ -130,7 +170,7 @@ func (s *ionosCloudDnsProviderResolver) findOrCreateRecord(ch *v1alpha1.Challeng
 	}
 	s.logger.Debug("record not found, try to create record...", zap.String("recordName", recordName), zap.String("key", ch.Key),
 		zap.String("zoneId", zoneId))
-	record, err := s.client.CreateTXTRecord(zoneId, recordName, ch.Key)
+	record, err := client.CreateTXTRecord(zoneId, recordName, ch.Key)
 	if err != nil {
 		s.logger.Error("Error creating record", zap.Error(err))
 		return err
@@ -140,10 +180,10 @@ func (s *ionosCloudDnsProviderResolver) findOrCreateRecord(ch *v1alpha1.Challeng
 	return nil
 }
 
-func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeRequest, zoneId string) error {
+func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeRequest, zoneId string, client clouddns.DNSAPI) error {
 	recordName := recordNameFromChallenge(ch)
 	s.logger.Debug("try to find txt record...", zap.String("recordName", recordName), zap.String("fqdn", ch.ResolvedFQDN), zap.String("zoneId", zoneId))
-	recordList, err := s.client.GetRecords(zoneId, recordName)
+	recordList, err := client.GetRecords(zoneId, recordName)
 	if err != nil {
 		s.logger.Error("Error fetching record", zap.Error(err))
 		return err
@@ -153,7 +193,7 @@ func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeReque
 			zap.String("zoneId", zoneId))
 		return nil
 	}
-	var record *dnsclient.RecordRead
+	var record *ionoscloud.RecordRead
 	for _, r := range *recordList.Items {
 		content := r.GetProperties().GetContent()
 		if content != nil && *content == ch.Key {
@@ -167,7 +207,7 @@ func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeReque
 		return nil
 	}
 	s.logger.Info("record found, deleting...", zap.String("recordName", recordName), zap.String("recordId", *record.Id))
-	err = s.client.DeleteRecord(zoneId, *record.Id)
+	err = client.DeleteRecord(zoneId, *record.Id)
 	if err != nil {
 		s.logger.Error("Error deleting record", zap.Error(err))
 		return err
@@ -177,10 +217,46 @@ func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeReque
 	return nil
 }
 
+func (s *ionosCloudDnsProviderResolver) newDNSAPIFromK8Secret(
+	challengeConfig *apiextensionsv1.JSON) (clouddns.DNSAPI, error) {
+	var config ionosCloudDNS01SolverConfig
+
+	if challengeConfig != nil && len(challengeConfig.Raw) > 0 {
+		if err := json.Unmarshal(challengeConfig.Raw, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse config: %w", err)
+		}
+	}
+
+	if config.SecretRef == "" {
+		config.SecretRef = defaultSecretName
+	}
+
+	if config.AuthTokenSecretKey == "" {
+		config.AuthTokenSecretKey = defaultAuthTokenSecretKey
+	}
+
+	secret, err := s.k8Client.CoreV1().Secrets(s.namespace).Get(context.Background(), config.SecretRef, v1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get secret %s from namespace %s: %w", config.SecretRef, s.namespace, err)
+	}
+
+	return s.dnsAPIFactory(string(secret.Data[config.AuthTokenSecretKey])), nil
+}
+
 func recordNameFromChallenge(ch *v1alpha1.ChallengeRequest) string {
 	return strings.TrimSuffix(ch.ResolvedFQDN, "."+ch.ResolvedZone)
 }
 
 func zoneNameFromChallenge(ch *v1alpha1.ChallengeRequest) string {
 	return strings.TrimSuffix(ch.ResolvedZone, ".")
+}
+
+func DefaultDNSAPIFactory(token string) clouddns.DNSAPI {
+	return clouddns.CreateDNSAPI(ionoscloud.NewAPIClient(
+		ionoscloud.NewConfiguration("", "", token, "")),
+	)
+}
+
+func DefaultK8FactoryFactory(config *rest.Config) (K8Client, error) {
+	return kubernetes.NewForConfig(config)
 }
