@@ -42,8 +42,8 @@ jobs:
         - name: install cert-manager-webhook-ionos-cloud chart
           run: |
             helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-cloud \
-            --image.repository cert-manager-e2e-tests \
-            --image.tag ${{ github.run_number }}
+            --set image.repository cert-manager-e2e-tests \
+            --set image.tag ${{ github.run_number }}
             kubectl wait --timeout=30s --for=jsonpath='{.status.readyReplicas}'=1 deployment/cert-manager-webhook-ionos-cloud
         - name: create ionos token secret
           env:
