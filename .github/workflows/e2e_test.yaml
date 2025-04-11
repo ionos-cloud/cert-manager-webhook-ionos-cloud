@@ -7,8 +7,7 @@ jobs:
       runs-on: ubuntu-latest
       strategy:
         matrix:
-          # temporary: cert_manager_version: ["v1.15.0", "v1.16.0", "v1.17.0"]
-          cert_manager_version: ["v1.17.0"]
+          cert_manager_version: ["v1.15.0", "v1.16.0", "v1.17.0"]
       steps:
         - name: Create k8s Kind Cluster
           uses: helm/kind-action@v1
@@ -64,9 +63,7 @@ jobs:
             PREFIX=$(date +%k%M%N)
             ZONE_ID=$(curl -v -H "Authorization: Bearer $IONOS_TOKEN" --json \
             "{\"properties\":{\"zoneName\":\"$PREFIX.$TEST_ZONE_NAME\",\"description\":\"used for e2e testing for cert-manager webhook\",\"enabled\":true}}" \
-            https://dns.de-fra.ionos.com/zones | jq .id)
-            echo $PREFIX
-            echo $ZONE_ID
+            https://dns.de-fra.ionos.com/zones | jq -r .id)
             echo "prefix=$PREFIX" >> "$GITHUB_OUTPUT"
             echo "zone_id=$ZONE_ID" >> "$GITHUB_OUTPUT"
         - name: create certificate and check issuance
