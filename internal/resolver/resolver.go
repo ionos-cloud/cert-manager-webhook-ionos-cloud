@@ -137,16 +137,17 @@ func (s *ionosCloudDnsProviderResolver) findZone(ch *v1alpha1.ChallengeRequest, 
 		s.logger.Error("Error fetching zone", zap.Error(err))
 		return "", err
 	}
-	if zoneList.Items == nil || len(*zoneList.Items) == 0 {
-		s.logger.Info("zone not found", zap.String("zoneName", zoneName))
-		if shouldFind {
-			return "", fmt.Errorf("zone '%s' not found", zoneName)
+	for _, zone := range *zoneList.Items {
+		if *zone.Properties.ZoneName == zoneName {
+			s.logger.Info("zone found", zap.String("zoneName", zoneName), zap.String("zoneId", *zone.Id))
+			return *zone.Id, nil
 		}
-		return "", nil
 	}
-	zone := (*zoneList.Items)[0]
-	s.logger.Info("zone found", zap.String("zoneName", zoneName), zap.String("zoneId", *zone.Id))
-	return *zone.Id, nil
+
+	if shouldFind {
+		return "", fmt.Errorf("zone '%s' not found", zoneName)
+	}
+	return "", nil
 }
 
 func (s *ionosCloudDnsProviderResolver) findOrCreateRecord(ch *v1alpha1.ChallengeRequest, zoneId string, client clouddns.DNSAPI) error {
