@@ -61,7 +61,7 @@ jobs:
             TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
             IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
           run: |
-            PREFIX=$(uuid)
+            PREFIX=$(date +%k%M%N)
             ZONE_ID=$(curl -v -H "Authorization: Bearer $IONOS_TOKEN" --json \
             "{\"properties\":{\"zoneName\":\"$PREFIX.$TEST_ZONE_NAME\",\"description\":\"used for e2e testing for cert-manager webhook\",\"enabled\":true}}" \
             https://dns.de-fra.ionos.com/zones | jq .id)
