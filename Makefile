@@ -37,7 +37,7 @@ clean:
 ##@ Development cycle
 .PHONY: generate-mocks
 generate-mocks: ## Generate mocks
-	$(GO_RUN) github.com/vektra/mockery/v2 --name DNSAPI --output internal/clouddns/mocks --recursive --exclude internal/tools
+	$(GO_RUN) github.com/vektra/mockery/v2
 
 .PHONY: build
 build: ## Build the binary
@@ -123,6 +123,8 @@ get-dependencies:
 
 
 conformance-test-standalone: ## runs conformance tests without setup, if running locally no need to repeat the setup steps for every run
+	kubectl create secret generic test-ionos-cloud-credentials \
+	--from-literal=token=$$IONOS_TOKEN --dry-run=client -o yaml > cmd/webhook/testdata/ionos-credentials.test.yaml
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" \
 	TEST_ASSET_ETCD="$(PWD)/bin/tools/etcd" \
 	TEST_ASSET_KUBE_APISERVER="$(PWD)/bin/tools/kube-apiserver" \

@@ -1,1 +1,31 @@
 with-expecter: True
+packages:
+  github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns:
+    config:
+      dir: internal/mocks
+      filename: "{{.InterfaceName}}.go"
+      mockname: "{{.InterfaceName}}"
+      outpkg: mocks
+    interfaces:
+      DNSAPI:
+  github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/resolver:
+    config:
+      dir: internal/mocks
+      filename: "{{.InterfaceName}}.go"
+      mockname: "{{.InterfaceName}}"
+      outpkg: mocks
+    interfaces:
+      K8Client:
+  k8s.io/client-go/kubernetes/typed/core/v1:
+    config:
+      dir: internal/mocks
+      filename: "{{.InterfaceName}}.go"
+      mockname: "{{.InterfaceName}}"
+      outpkg: mocks
+    interfaces:
+      CoreV1Interface:
+      SecretsGetter:
+      SecretInterface:
+
+
+
