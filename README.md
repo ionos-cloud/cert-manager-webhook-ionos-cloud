@@ -1,8 +1,7 @@
 [![GoTemplate](https://img.shields.io/badge/go/template-black?logo=go)](https://github.com/golang-standards/project-layout)
-[![Go](https://img.shields.io/badge/go-1.22.0-blue?logo=go)](https://golang.org/)
-[![Helm](https://img.shields.io/badge/helm-3.12.3-blue?logo=helm)](https://helm.sh/)
-[![Kubernetes](https://img.shields.io/badge/kubernetes-1.30.2-blue?logo=kubernetes)](https://kubernetes.io/)
-[![Cert Manager](https://img.shields.io/badge/cert--manager-1.15.2-blue?logo=cert-manager)](https://cert-manager.io/)
+[![Go](https://img.shields.io/badge/go-1.24.0-blue?logo=go)](https://golang.org/)
+[![Cert Manager](https://img.shields.io/badge/cert--manager-1.17.1-blue?logo=cert-manager)](https://cert-manager.io/)
+[![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/cert-manager-webhook-ionos-cloud)](https://artifacthub.io/packages/search?repo=cert-manager-webhook-ionos-cloud)
 
 ![Alt text](.github/IONOS.CLOUD.BLU.svg?raw=true)
 
