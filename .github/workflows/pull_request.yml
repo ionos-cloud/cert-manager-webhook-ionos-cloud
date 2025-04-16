@@ -25,12 +25,10 @@ jobs:
       - name: Fetch latest tag
         id: get-latest-chart-tag
         run: |
-          latest_tag="$(git tag --list --sort='-*authordate' | head -n 1)"
-          echo "$latest_tag"
+          latest_tag="$(git tag --list --sort='-authordate' | head -n 1)"
           if [[ "$latest_tag" =~ "chart-".* ]]; then
             echo "latest-chart-tag=$latest_tag" >> "$GITHUB_OUTPUT"
           fi
-          echo "$GITHUB_OUTPUT"
       - name: Setup go
         uses: actions/setup-go@v5
         with:
