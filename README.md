@@ -175,10 +175,10 @@ make help
 
 The e2e tests run the whole stack on a Kubernetes cluster. 
 Prequisites:
-  * a Kind cluster
+  * a [Kind](https://kind.sigs.k8s.io/) cluster
   * Kubectl pointing to the cluster
-  * helm
-  * docker (the script builds a docker container based on the latest changes)
+  * Helm
+  * Docker (the script builds a docker container based on the current code)
 
 The e2e tests can be run using the `run-e2e-tests.sh`:
 
