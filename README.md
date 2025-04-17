@@ -171,6 +171,27 @@ make help
  * TEST_ZONE_NAME: the zone for which DNS-01 will be performed
  * IONOS_TOKEN: the token for accessing IONOS DNS API
 
+### e2e tests:
+
+The e2e tests run the whole stack on a Kubernetes cluster. 
+Prequisites:
+  * a Kind cluster
+  * Kubectl pointing to the cluster
+  * helm
+  * docker (the script builds a docker container based on the latest changes)
+
+The e2e tests can be run using the `run-e2e-tests.sh`:
+
+```bash
+export IONOS_TOKEN=THE_TOKEN
+export TEST_ZONE_NAME=THE_ZONE_NAME
+
+./run-e2e-tests.sh ----cert-manager-version v1.17.1
+
+```
+
+Based on the operation system and the current user permissions, sudo may be needed to run the script. 
+
 ### Compatibility:
 
 This extension is **tested** with the following cert-manager major versions: v1.15.x, v1.16.x, v1.17.x
