@@ -190,7 +190,7 @@ export TEST_ZONE_NAME=THE_ZONE_NAME
 
 ```
 
-Based on the operation system and the current user permissions, sudo may be needed to run the script. 
+Based on the operating system and the current user permissions, sudo may be needed to run the script. 
 
 ### Compatibility:
 
