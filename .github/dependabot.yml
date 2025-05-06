@@ -12,3 +12,9 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    commit-message:
+      prefix: "deps(dependabot)"
+    groups:
+      all-dependencies:
+        patterns:
+          - "*"
