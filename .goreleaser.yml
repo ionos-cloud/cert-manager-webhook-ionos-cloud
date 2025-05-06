@@ -30,7 +30,7 @@ builds:
 source:
   enabled: true
 archives:
-  - format: tar.gz
+  - formats: [tar.gz]
     # this name template makes the OS and Arch compatible with the results of uname.
     name_template: >-
       {{ .ProjectName }}_
@@ -42,7 +42,7 @@ archives:
     # use zip for windows archives
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [zip]
 dockers:
   - id: cert-manager-webhook-ionos-cloud-amd64
     use: buildx

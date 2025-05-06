@@ -8,7 +8,7 @@ IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 BUILD_VERSION ?= $(shell git branch --show-current)
 BUILD_COMMIT ?= $(shell git rev-parse --short HEAD)
 BUILD_TIMESTAMP ?= $(shell date -u '+%Y-%m-%d %H:%M:%S')
-GO_RUN := go run -modfile ./internal/tools/go.mod
+GO_TOOL := go tool
 
 PWD = $(shell pwd)
 export PATH := $(PWD)/bin:$(PATH)
@@ -37,7 +37,7 @@ clean:
 ##@ Development cycle
 .PHONY: generate-mocks
 generate-mocks: ## Generate mocks
-	$(GO_RUN) github.com/vektra/mockery/v2
+	$(GO_TOOL) github.com/vektra/mockery/v2
 
 .PHONY: build
 build: ## Build the binary
@@ -58,17 +58,17 @@ run: ## Run the application
 
 .PHONY: fmt
 fmt: ## Run go fmt against code.
-	$(GO_RUN) mvdan.cc/gofumpt -w .
+	$(GO_TOOL) mvdan.cc/gofumpt -w .
 
 ##@ static analysis
 
 .PHONY: lint
 lint: 
-	$(GO_RUN) github.com/golangci/golangci-lint/cmd/golangci-lint run -v
+	$(GO_TOOL) github.com/golangci/golangci-lint/cmd/golangci-lint run -v
 
 .PHONY: lint-with-fix
 lint-with-fix: ## Run golangci-lint against code with fix.
-	$(GO_RUN) github.com/golangci/golangci-lint/cmd/golangci-lint run --build-tags unit --fix
+	$(GO_TOOL) github.com/golangci/golangci-lint/cmd/golangci-lint run --build-tags unit --fix
 
 .PHONY: vet
 vet: ## Run go vet against code.
@@ -80,7 +80,7 @@ static-analysis: lint vet ## Run static analysis against code.
 ##@ helm
 
 helm-docs: ## Generate helm documentation
-	$(GO_RUN) github.com/norwoodj/helm-docs/cmd/helm-docs
+	$(GO_TOOL) github.com/norwoodj/helm-docs/cmd/helm-docs
 
 reports:
 	@mkdir -pv "$(@)/licenses"
@@ -89,8 +89,8 @@ reports:
 release-check: ## Check if the release will work
 	GITHUB_SERVER_URL=github.com GITHUB_REPOSITORY=ionos-cloud/cert-manager-webhook-ionos-cloud \
 	REGISTRY=$(REGISTRY) \
-	IMAGE_NAME=$(IMAGE_NAME) \ 
-	$(GO_RUN) github.com/goreleaser/goreleaser release --snapshot --clean --skip-publish
+	IMAGE_NAME=$(IMAGE_NAME) \
+	$(GO_TOOL) github.com/goreleaser/goreleaser/v2 release --snapshot --clean --skip=publish
 
 ##@ licenses
 
@@ -98,7 +98,7 @@ manualLicenses := $(shell cat .licenses/licenses-manual-list.csv | cut -d "," -f
 ignoredLicenses := $(shell cat .licenses/licenses-ignore-list.txt | tr '\n' ',')
 
 check-licenses: ## Check the licenses
-	$(GO_RUN) github.com/google/go-licenses/v2 check --include_tests --ignore $(manualLicenses) --ignore $(ignoredLicenses) ./...
+	$(GO_TOOL) github.com/google/go-licenses/v2 check --include_tests --ignore $(manualLicenses) --ignore $(ignoredLicenses) ./...
 
 
 ##@ conformance tests
