@@ -64,7 +64,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
-          version: v2.3.2
+          version: v2.9.0
           args: release --snapshot --clean --skip=publish
         env:
           IGNORE_TAG: ${{ steps.get-latest-chart-tag.outputs.latest-chart-tag }}

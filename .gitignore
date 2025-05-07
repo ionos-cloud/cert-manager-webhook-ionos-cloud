@@ -4,3 +4,4 @@ out/
 .envrc
 index.yaml
 cmd/webhook/testdata/*.test.yaml
+dist/**/*.*
