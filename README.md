@@ -45,7 +45,7 @@ Before proceeding, ensure you have the following:
 By convention, cert-manager is deployed in a namespace named `cert-manager`. The chart assumes this default and uses this value to add privileges to the cert-manager service account to enable the creation of resources of type "ionos-cloud". If you are deploying the cert-manager chart in a different namespace, you need to use the `certManager.namespace` chart value to set the name of the namespace where cert-manager is deployed. (e.g using `--set certManager.namespace=custom_namespace`)
 
 3. ***Initiation of IONOS Cloud Authentication Token Secret:***
-    See [IONOS Cloud Token management](https://docs.ionos.com/cloud/set-up-ionos-cloud/management/token-management) how to get a token.
+    See [IONOS Cloud Token management](https://docs.ionos.com/cloud/set-up-ionos-cloud/management/identity-access-management/token-manager) how to get a token.
 
     ```bash
     kubectl create secret generic cert-manager-webhook-ionos-cloud \
