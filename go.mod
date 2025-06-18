@@ -10,7 +10,7 @@ replace sigs.k8s.io/structured-merge-diff/v4 => sigs.k8s.io/structured-merge-dif
 
 require (
 	github.com/cert-manager/cert-manager v1.17.2
-	github.com/go-logr/logr v1.4.2
+	github.com/go-logr/logr v1.4.3
 	github.com/ionos-cloud/sdk-go-dns v1.4.0
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/zap v1.27.0
