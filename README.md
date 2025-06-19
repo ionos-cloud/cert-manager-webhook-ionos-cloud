@@ -1,6 +1,6 @@
 [![GoTemplate](https://img.shields.io/badge/go/template-black?logo=go)](https://github.com/golang-standards/project-layout)
-[![Go](https://img.shields.io/badge/go-1.24.0-blue?logo=go)](https://golang.org/)
-[![Cert Manager](https://img.shields.io/badge/cert--manager-1.17.1-blue?logo=cert-manager)](https://cert-manager.io/)
+[![Go](https://img.shields.io/badge/go-1.24.2-blue?logo=go)](https://golang.org/)
+[![Cert Manager](https://img.shields.io/badge/cert--manager-1.18.1-blue?logo=cert-manager)](https://cert-manager.io/)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/cert-manager-webhook-ionos-cloud)](https://artifacthub.io/packages/search?repo=cert-manager-webhook-ionos-cloud)
 
 ![Alt text](.github/IONOS.CLOUD.BLU.svg?raw=true)
@@ -185,7 +185,7 @@ The e2e tests can be run using the `run-e2e-tests.sh`:
 export IONOS_TOKEN=THE_TOKEN
 export TEST_ZONE_NAME=THE_ZONE_NAME
 
-./run-e2e-tests.sh --cert-manager-version v1.17.1
+./run-e2e-tests.sh --cert-manager-version v1.18.1
 
 ```
 
@@ -193,4 +193,4 @@ Based on the operating system and the current user permissions, `sudo` may be ne
 
 ### Compatibility:
 
-This extension is **tested** with the following cert-manager major versions: v1.15.x, v1.16.x, v1.17.x
+This extension is **tested** with the three latest cert-manager minor versions.
