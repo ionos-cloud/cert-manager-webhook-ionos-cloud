@@ -9,7 +9,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Check out code
-              uses: actions/checkout@v4
+              uses: actions/checkout@v5
               with:
                 fetch-depth: 0
             - name: Fetch latest tag
@@ -18,7 +18,7 @@ jobs:
                 git fetch --tags
                 echo "latest-tag=$(git tag --list --sort='-*authordate' | tail -n 1)" >> "$GITHUB_OUTPUT"
             - name: Install helm chart
-              uses: azure/setup-helm@v4.3.0
+              uses: azure/setup-helm@v4.3.1
             - name: Package helm chart
               run: |
                 helm package chart/cert-manager-webhook-ionos-cloud/ --app-version ${{ steps.get-latest-tag.outputs.latest-tag }}
