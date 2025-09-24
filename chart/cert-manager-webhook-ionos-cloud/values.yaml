@@ -12,6 +12,11 @@ certManager:
   serviceAccountName: cert-manager
   namespace: cert-manager
 
+replicaCount: 1
+
+# Additional environment variables
+env: []
+
 image:
   tag: latest
   repository: ghcr.io/ionos-cloud/cert-manager-webhook-ionos-cloud
