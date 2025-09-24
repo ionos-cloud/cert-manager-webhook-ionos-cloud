@@ -33,7 +33,7 @@ spec:
                   apiVersion: v1
                   fieldPath: metadata.namespace
             {{- with .Values.env }}
-            {{- toYaml . | nindent 12 }}
+            {{ toYaml . | nindent 12 }}
             {{- end }}
           ports:
             - name: https
