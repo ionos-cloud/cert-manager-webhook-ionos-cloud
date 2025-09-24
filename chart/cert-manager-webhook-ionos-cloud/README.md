@@ -8,7 +8,6 @@ This webhook allows you to utilize IONOS Cloud as a DNS provider for performing 
 
 Cert-manager is a powerful Kubernetes add-on that automates the management and issuance of TLS certificates from various issuing sources. The IONOS Cloud Webhook extends cert-manager's capabilities to manage DNS challenges using IONOS Cloud's DNS services.
 
-
 ## Usage
    
 1. ***Install the webhook server***
@@ -19,6 +18,17 @@ Cert-manager is a powerful Kubernetes add-on that automates the management and i
     --install cert-manager-webhook-ionos-cloud/cert-manager-webhook-ionos-cloud
     ```
 
+    Note that you can set custom environment variables if needed. For example, proxy configuration for restricted environments:
+    ```yaml
+    # values.yaml
+    env:
+      - name: HTTP_PROXY
+        value: "http://proxy.company.com:8080"
+      - name: HTTPS_PROXY
+        value: "http://proxy.company.com:8080"
+      - name: NO_PROXY
+        value: "localhost,127.0.0.1,.local,.cluster.local"
+    ```
 
 2. ***Initiation of IONOS Cloud Authentication Token Secret:***
     See [IONOS Cloud Token management](https://docs.ionos.com/cloud/set-up-ionos-cloud/management/token-management) for how to get a token.

@@ -12,6 +12,28 @@ certManager:
   serviceAccountName: cert-manager
   namespace: cert-manager
 
+replicaCount: 1
+
+## Additional container environment variables
+##
+## You specify this manually like you would a raw deployment manifest.
+## This means you can bind in environment variables from secrets.
+##
+## e.g. static environment variables:
+##  - name: HTTP_PROXY
+##    value: "http://proxy.example.com:8080"
+##  - name: HTTPS_PROXY
+##    value: "http://proxy.example.com:8080"
+##  - name: NO_PROXY
+##    value: "localhost,127.0.0.1,.svc"
+## e.g. secret environment variable:
+## - name: USERNAME
+##   valueFrom:
+##     secretKeyRef:
+##       name: mysecret
+##       key: username
+env: []
+
 image:
   tag: latest
   repository: ghcr.io/ionos-cloud/cert-manager-webhook-ionos-cloud
