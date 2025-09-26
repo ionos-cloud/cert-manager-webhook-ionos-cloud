@@ -70,13 +70,12 @@ jobs:
           fetch-depth: 0
       - name: Git Fetch
         run: git fetch --force --tags
-      - name: Fetch latest tag
-        id: get-latest-chart-tag
+      - name: Get latest non-chart tag
+        id: get-latest-release-tag
         run: |
-          latest_tag="$(git tag --list --sort='-authordate' | head -n 1)"
-          if [[ "$latest_tag" =~ "chart-".* ]]; then
-            echo "latest-chart-tag=$latest_tag" >> "$GITHUB_OUTPUT"
-          fi
+          latest_release_tag="$(git tag --list --sort='-version:refname' | grep -v '^chart-' | head -n 1)"
+          echo "latest-release-tag=$latest_release_tag" >> "$GITHUB_OUTPUT"
+          echo "Using release tag: $latest_release_tag"
       - name: Setup go
         uses: actions/setup-go@v5
         with:
@@ -115,4 +114,4 @@ jobs:
           version: v2.9.0
           args: release --snapshot --clean --skip=publish
         env:
-          IGNORE_TAG: ${{ steps.get-latest-chart-tag.outputs.latest-chart-tag }}
+          GORELEASER_CURRENT_TAG: ${{ steps.get-latest-release-tag.outputs.latest-release-tag }}
