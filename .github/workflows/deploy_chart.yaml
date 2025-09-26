@@ -1,8 +1,11 @@
 name: deploy helm chart
 on:
     workflow_dispatch:
-
-
+    push: 
+      branches: 
+        - main
+      paths:
+        - chart/cert-manager-webhook-ionos-cloud/*
 jobs:
     deploy:
         name: deploy helm chart
@@ -17,6 +20,10 @@ jobs:
               run: |
                 git fetch --tags
                 echo "latest-tag=$(git tag --list --sort='-*authordate' | tail -n 1)" >> "$GITHUB_OUTPUT"
+            - name: Get Helm Chart version
+              id: get-chart-version
+              run: |
+                echo "chart-version=$(yq '.version' chart/cert-manager-webhook-ionos-cloud/Chart.yaml)" >> "$GITHUB_OUTPUT"
             - name: Install helm chart
               uses: azure/setup-helm@v4.3.1
             - name: Package helm chart
@@ -25,10 +32,10 @@ jobs:
             - name: Create Release
               uses: ncipollo/release-action@v1
               with:
-                tag: chart-${{ steps.get-latest-tag.outputs.latest-tag }}
-                name: chart-${{ steps.get-latest-tag.outputs.latest-tag }}
+                tag: chart-${{ steps.get-chart-version.outputs.chart-version }}
+                name: chart-${{ steps.get-chart-version.outputs.chart-version }}
                 body: | 
-                    Helm chart version ${{ steps.get-latest-tag.outputs.latest-tag }}
+                    Helm chart version ${{ steps.get-chart-version.outputs.chart-version }}
                 token: ${{ github.token }}
                 prerelease: false
                 makeLatest: false
@@ -39,7 +46,7 @@ jobs:
               run: |
                 git checkout helm-repo
                 helm repo index . --merge index.yaml \
-                --url https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/chart-${{ steps.get-latest-tag.outputs.latest-tag }}/
+                --url https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/chart-${{ steps.get-chart-version.outputs.chart-version }}/
                 git config user.email "no-reply@ionos-cloud.com";
                 git config user.name "IONOS-CloudBot";
                 git add index.yaml
