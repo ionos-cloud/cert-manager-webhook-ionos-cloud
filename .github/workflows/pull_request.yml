@@ -10,6 +10,54 @@ permissions:
   checks: write
   
 jobs:
+  validate-chart-version:
+    runs-on: ubuntu-22.04
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Check if chart files changed
+        id: check-chart-changes
+        run: |
+          git fetch origin main:main
+          if git diff --name-only origin/main...HEAD | grep -q '^chart/'; then
+            echo "chart-changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "chart-changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Get current chart version
+        id: current-version
+        if: steps.check-chart-changes.outputs.chart-changed == 'true'
+        run: |
+          current_version=$(grep '^version:' chart/cert-manager-webhook-ionos-cloud/Chart.yaml | awk '{print $2}')
+          echo "current-version=$current_version" >> "$GITHUB_OUTPUT"
+      - name: Get main branch chart version
+        id: main-version
+        if: steps.check-chart-changes.outputs.chart-changed == 'true'
+        run: |
+          git checkout main
+          main_version=$(grep '^version:' chart/cert-manager-webhook-ionos-cloud/Chart.yaml | awk '{print $2}')
+          echo "main-version=$main_version" >> "$GITHUB_OUTPUT"
+          git checkout -
+      - name: Validate version bump
+        if: steps.check-chart-changes.outputs.chart-changed == 'true'
+        run: |
+          current="${{ steps.current-version.outputs.current-version }}"
+          main="${{ steps.main-version.outputs.main-version }}"
+          
+          echo "Current chart version: $current"
+          echo "Main branch chart version: $main"
+          
+          if [ "$current" = "$main" ]; then
+            echo "❌ Chart files were modified but chart version was not bumped!"
+            echo "Please increment the version in chart/cert-manager-webhook-ionos-cloud/Chart.yaml"
+            echo "Current version: $current"
+            exit 1
+          else
+            echo "✅ Chart version was properly bumped from $main to $current"
+          fi
   snapshot-release:
     runs-on: ubuntu-22.04
     env:
@@ -22,13 +70,12 @@ jobs:
           fetch-depth: 0
       - name: Git Fetch
         run: git fetch --force --tags
-      - name: Fetch latest tag
-        id: get-latest-chart-tag
+      - name: Get latest non-chart tag
+        id: get-latest-release-tag
         run: |
-          latest_tag="$(git tag --list --sort='-authordate' | head -n 1)"
-          if [[ "$latest_tag" =~ "chart-".* ]]; then
-            echo "latest-chart-tag=$latest_tag" >> "$GITHUB_OUTPUT"
-          fi
+          latest_release_tag="$(git tag --list --sort='-version:refname' | grep -v '^chart-' | head -n 1)"
+          echo "latest-release-tag=$latest_release_tag" >> "$GITHUB_OUTPUT"
+          echo "Using release tag: $latest_release_tag"
       - name: Setup go
         uses: actions/setup-go@v5
         with:
@@ -67,4 +114,4 @@ jobs:
           version: v2.9.0
           args: release --snapshot --clean --skip=publish
         env:
-          IGNORE_TAG: ${{ steps.get-latest-chart-tag.outputs.latest-chart-tag }}
+          GORELEASER_CURRENT_TAG: ${{ steps.get-latest-release-tag.outputs.latest-release-tag }}
