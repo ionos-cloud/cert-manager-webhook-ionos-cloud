@@ -73,7 +73,7 @@ jobs:
       - name: Get latest non-chart tag
         id: get-latest-release-tag
         run: |
-          latest_release_tag="$(git tag --list --sort='-version:refname' | grep -v '^chart-' | head -n 1)"
+          latest_release_tag="$(git tag --list --sort='-version:refname' | grep -v 'chart' | head -n 1)"
           echo "latest-release-tag=$latest_release_tag" >> "$GITHUB_OUTPUT"
           echo "Using release tag: $latest_release_tag"
       - name: Setup go
