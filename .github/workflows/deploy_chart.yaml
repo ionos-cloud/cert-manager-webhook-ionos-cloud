@@ -4,8 +4,7 @@ on:
     push: 
       branches: 
         - main
-      paths:
-        - chart/cert-manager-webhook-ionos-cloud/*
+
 jobs:
     deploy:
         name: deploy helm chart
@@ -32,10 +31,8 @@ jobs:
             - name: Create Release
               uses: ncipollo/release-action@v1
               with:
-                tag: chart-${{ steps.get-chart-version.outputs.chart-version }}
-                name: chart-${{ steps.get-chart-version.outputs.chart-version }}
-                body: | 
-                    Helm chart version ${{ steps.get-chart-version.outputs.chart-version }}
+                tag: ${{ steps.get-chart-version.outputs.chart-version }}-chart+${{ steps.get-latest-tag.outputs.latest-tag }}
+                name: Chart version ${{ steps.get-chart-version.outputs.chart-version }} with app version ${{ steps.get-latest-tag.outputs.latest-tag }}
                 token: ${{ github.token }}
                 prerelease: false
                 makeLatest: false
