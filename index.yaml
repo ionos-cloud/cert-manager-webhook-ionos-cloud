@@ -9,7 +9,7 @@ entries:
     name: cert-manager-webhook-ionos-cloud
     type: application
     urls:
-    - https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/chart-0.3.0/cert-manager-webhook-ionos-cloud-0.3.0.tgz
+    - https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/0.3.0-chart%2Bv0.2.1/cert-manager-webhook-ionos-cloud-0.3.0.tgz
     version: 0.3.0
   - apiVersion: v2
     appVersion: v0.2.1
