@@ -115,6 +115,3 @@ jobs:
           args: release --snapshot --clean --skip=publish
         env:
           GORELEASER_CURRENT_TAG: ${{ steps.get-latest-release-tag.outputs.latest-release-tag }}
-
-      - name: release helm chart
-        uses: ./.github/workflows/deploy_chart.yaml
