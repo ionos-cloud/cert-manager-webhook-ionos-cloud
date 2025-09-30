@@ -47,6 +47,9 @@ jobs:
           COSIGN_PRIVATE_KEY: ${{secrets.COSIGN_PRIVATE_KEY}}
           COSIGN_PASSWORD: ${{secrets.COSIGN_KEY_PASSWORD}}
           GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
+
+  helm-chart-release:
+    name: helm chart release
+    needs: [release]
+    uses: ./.github/workflows/_deploy_chart.yaml
       
-      - name: release helm chart
-        uses: ./.github/workflows/_deploy_chart.yaml
