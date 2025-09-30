@@ -1,9 +1,6 @@
 name: deploy helm chart
 on:
-    workflow_dispatch:
-    push: 
-      branches: 
-        - main
+    workflow_call: 
 
 jobs:
     deploy:
