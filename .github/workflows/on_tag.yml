@@ -49,7 +49,7 @@ jobs:
           GORELEASER_CURRENT_TAG: ${{ github.ref_name }}
 
   helm-chart-release:
-    name: Report
+    name: helm chart release
     needs: [release]
     uses: ./.github/workflows/_deploy_chart.yaml
       
