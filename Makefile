@@ -1,5 +1,5 @@
 
-ENVTEST_K8S_VERSION = 1.30
+ENVTEST_K8S_VERSION = 1.34
 
 VERSION ?= 0.0.1
 IMAGE_TAG_BASE ?= ionos-cloud/cert-manager-webhook-ionos-cloud
