@@ -20,12 +20,10 @@ import (
 	apiextensionsv1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/ptr"
 )
 
 var (
-	typeTxtRecord = ptr.To(dnsclient.RecordType("TXT"))
-	emptyConfig   = &apiextensionsv1.JSON{Raw: []byte("{}")}
+	typeTxtRecord = toPTR(dnsclient.RecordType("TXT"))
 	errK8Client   = errors.New("k8 client error")
 )
 
@@ -111,11 +109,11 @@ func (s *ResolverTestSuite) TestPresent() {
 			name: "zone already exists",
 			givenZones: []dnsclient.ZoneRead{
 				{
-					Id: ptr.To("test-zone-id"),
+					Id: toPTR("test-zone-id"),
 					Properties: &dnsclient.Zone{
-						ZoneName: ptr.To("test.com"),
+						ZoneName: toPTR("test.com"),
 					},
-					Type: ptr.To("NATIVE"),
+					Type: toPTR("NATIVE"),
 				},
 			},
 			givenRecords: []dnsclient.RecordRead{},
@@ -132,20 +130,20 @@ func (s *ResolverTestSuite) TestPresent() {
 			name: "record with the same name and key already exists",
 			givenZones: []dnsclient.ZoneRead{
 				{
-					Id: ptr.To("test-zone-id"),
+					Id: toPTR("test-zone-id"),
 					Properties: &dnsclient.Zone{
-						ZoneName: ptr.To("test.com"),
+						ZoneName: toPTR("test.com"),
 					},
-					Type: ptr.To("NATIVE"),
+					Type: toPTR("NATIVE"),
 				},
 			},
 			givenRecords: []dnsclient.RecordRead{
 				{
-					Id: ptr.To("test-record-id"),
+					Id: toPTR("test-record-id"),
 					Properties: &dnsclient.Record{
-						Name:    ptr.To("_acme-challenge"),
+						Name:    toPTR("_acme-challenge"),
 						Type:    typeTxtRecord,
-						Content: ptr.To("test-key"),
+						Content: toPTR("test-key"),
 					},
 				},
 			},
@@ -162,20 +160,20 @@ func (s *ResolverTestSuite) TestPresent() {
 			name: "record with the same name but different key already exists",
 			givenZones: []dnsclient.ZoneRead{
 				{
-					Id: ptr.To("test-zone-id"),
+					Id: toPTR("test-zone-id"),
 					Properties: &dnsclient.Zone{
-						ZoneName: ptr.To("test.com"),
+						ZoneName: toPTR("test.com"),
 					},
-					Type: ptr.To("NATIVE"),
+					Type: toPTR("NATIVE"),
 				},
 			},
 			givenRecords: []dnsclient.RecordRead{
 				{
-					Id: ptr.To("test-record-id"),
+					Id: toPTR("test-record-id"),
 					Properties: &dnsclient.Record{
-						Name:    ptr.To("_acme-challenge"),
+						Name:    toPTR("_acme-challenge"),
 						Type:    typeTxtRecord,
-						Content: ptr.To("different-key"),
+						Content: toPTR("different-key"),
 					},
 				},
 			},
@@ -205,11 +203,11 @@ func (s *ResolverTestSuite) TestPresent() {
 			name: "error fetching records",
 			givenZones: []dnsclient.ZoneRead{
 				{
-					Id: ptr.To("test-zone-id"),
+					Id: toPTR("test-zone-id"),
 					Properties: &dnsclient.Zone{
-						ZoneName: ptr.To("test.com"),
+						ZoneName: toPTR("test.com"),
 					},
-					Type: ptr.To("NATIVE"),
+					Type: toPTR("NATIVE"),
 				},
 			},
 			givenRecords:         []dnsclient.RecordRead{},
@@ -227,11 +225,11 @@ func (s *ResolverTestSuite) TestPresent() {
 			name: "error creating record",
 			givenZones: []dnsclient.ZoneRead{
 				{
-					Id: ptr.To("test-zone-id"),
+					Id: toPTR("test-zone-id"),
 					Properties: &dnsclient.Zone{
-						ZoneName: ptr.To("test.com"),
+						ZoneName: toPTR("test.com"),
 					},
-					Type: ptr.To("NATIVE"),
+					Type: toPTR("NATIVE"),
 				},
 			},
 			givenRecords:          []dnsclient.RecordRead{},
@@ -270,7 +268,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				if tc.thenRecordCreateKey != "" {
 					s.dnsAPIMock.EXPECT().CreateTXTRecord("test-zone-id", "_acme-challenge", tc.thenRecordCreateKey).
 						Return(dnsclient.RecordRead{
-							Id: ptr.To("test-record-id"),
+							Id: toPTR("test-record-id"),
 						}, tc.whenRecordCreateError)
 				}
 			}
@@ -346,11 +344,11 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			name: "zone exists, but no record",
 			givenZones: []dnsclient.ZoneRead{
 				{
-					Id: ptr.To("test-zone-id"),
+					Id: toPTR("test-zone-id"),
 					Properties: &dnsclient.Zone{
-						ZoneName: ptr.To("test.com"),
+						ZoneName: toPTR("test.com"),
 					},
-					Type: ptr.To("NATIVE"),
+					Type: toPTR("NATIVE"),
 				},
 			},
 			givenRecords: []dnsclient.RecordRead{},
@@ -368,20 +366,20 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			name: "zone and record with same name exists, but has a different key",
 			givenZones: []dnsclient.ZoneRead{
 				{
-					Id: ptr.To("test-zone-id"),
+					Id: toPTR("test-zone-id"),
 					Properties: &dnsclient.Zone{
-						ZoneName: ptr.To("test.com"),
+						ZoneName: toPTR("test.com"),
 					},
-					Type: ptr.To("NATIVE"),
+					Type: toPTR("NATIVE"),
 				},
 			},
 			givenRecords: []dnsclient.RecordRead{
 				{
-					Id: ptr.To("test-record-id"),
+					Id: toPTR("test-record-id"),
 					Properties: &dnsclient.Record{
-						Name:    ptr.To("_acme-challenge"),
+						Name:    toPTR("_acme-challenge"),
 						Type:    typeTxtRecord,
-						Content: ptr.To("different-key"),
+						Content: toPTR("different-key"),
 					},
 				},
 			},
@@ -412,11 +410,11 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			name: "record read error",
 			givenZones: []dnsclient.ZoneRead{
 				{
-					Id: ptr.To("test-zone-id"),
+					Id: toPTR("test-zone-id"),
 					Properties: &dnsclient.Zone{
-						ZoneName: ptr.To("test.com"),
+						ZoneName: toPTR("test.com"),
 					},
-					Type: ptr.To("NATIVE"),
+					Type: toPTR("NATIVE"),
 				},
 			},
 			givenRecords:         []dnsclient.RecordRead{},
@@ -434,20 +432,20 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			name: "record delete error",
 			givenZones: []dnsclient.ZoneRead{
 				{
-					Id: ptr.To("test-zone-id"),
+					Id: toPTR("test-zone-id"),
 					Properties: &dnsclient.Zone{
-						ZoneName: ptr.To("test.com"),
+						ZoneName: toPTR("test.com"),
 					},
-					Type: ptr.To("NATIVE"),
+					Type: toPTR("NATIVE"),
 				},
 			},
 			givenRecords: []dnsclient.RecordRead{
 				{
-					Id: ptr.To("test-record-id"),
+					Id: toPTR("test-record-id"),
 					Properties: &dnsclient.Record{
-						Name:    ptr.To("_acme-challenge"),
+						Name:    toPTR("_acme-challenge"),
 						Type:    typeTxtRecord,
-						Content: ptr.To("test-key"),
+						Content: toPTR("test-key"),
 					},
 				},
 			},
@@ -466,20 +464,20 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			name: "record with key exists",
 			givenZones: []dnsclient.ZoneRead{
 				{
-					Id: ptr.To("test-zone-id"),
+					Id: toPTR("test-zone-id"),
 					Properties: &dnsclient.Zone{
-						ZoneName: ptr.To("test.com"),
+						ZoneName: toPTR("test.com"),
 					},
-					Type: ptr.To("NATIVE"),
+					Type: toPTR("NATIVE"),
 				},
 			},
 			givenRecords: []dnsclient.RecordRead{
 				{
-					Id: ptr.To("test-record-id"),
+					Id: toPTR("test-record-id"),
 					Properties: &dnsclient.Record{
-						Name:    ptr.To("_acme-challenge"),
+						Name:    toPTR("_acme-challenge"),
 						Type:    typeTxtRecord,
-						Content: ptr.To("test-key"),
+						Content: toPTR("test-key"),
 					},
 				},
 			},
@@ -554,4 +552,8 @@ func setUpK8ClientExpectations(k8Client *mocks.K8Client, err error, t *testing.T
 	coreV1Interface.EXPECT().Secrets(testNamespace).Return(secretsInterface)
 
 	k8Client.EXPECT().CoreV1().Return(coreV1Interface)
+}
+
+func toPTR[C any](c C) *C {
+	return &c
 }
