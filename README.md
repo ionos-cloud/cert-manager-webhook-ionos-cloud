@@ -185,7 +185,7 @@ The e2e tests can be run using the `run-e2e-tests.sh`:
 export IONOS_TOKEN=THE_TOKEN
 export TEST_ZONE_NAME=THE_ZONE_NAME
 
-./run-e2e-tests.sh --cert-manager-version v1.18.1
+./run-e2e-tests.sh --cert-manager-version v1.19.1
 
 ```
 

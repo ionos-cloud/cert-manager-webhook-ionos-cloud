@@ -7,7 +7,7 @@ jobs:
       runs-on: ubuntu-latest
       strategy:
         matrix:
-          cert_manager_version: ["v1.16.5", "v1.17.3", "v1.18.1"]
+          cert_manager_version: ["v1.17.3", "v1.18.1", "v1.19.1"]
       steps:
         - name: Create k8s Kind Cluster
           uses: helm/kind-action@v1
