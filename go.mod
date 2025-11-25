@@ -1,10 +1,6 @@
 module github.com/ionos-cloud/cert-manager-webhook-ionos-cloud
 
-go 1.25.1
-
-// Do not remove this comment:
-// please place any replace statements here at the top for visibility and add a
-// comment to it as to when it can be removed
+go 1.25.3
 
 require (
 	github.com/cert-manager/cert-manager v1.19.1
