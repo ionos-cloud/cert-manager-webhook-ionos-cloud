@@ -90,7 +90,7 @@ release-check: ## Check if the release will work
 	GITHUB_SERVER_URL=github.com GITHUB_REPOSITORY=ionos-cloud/cert-manager-webhook-ionos-cloud \
 	REGISTRY=$(REGISTRY) \
 	IMAGE_NAME=$(IMAGE_NAME) \
-	$(GO_TOOL) github.com/goreleaser/goreleaser/v2 release --snapshot --clean --skip=publish
+	goreleaser release --snapshot --clean --skip=publish
 
 ##@ licenses
 
