@@ -17,8 +17,12 @@ spec:
     spec:
       serviceAccountName: {{ include "cert-manager-webhook-ionos-cloud.fullname" . }}
       containers:
+          {{- $imageTag := .Values.image.tag -}}
+          {{- if .Chart.AppVersion }}
+              {{- $imageTag = .Chart.AppVersion -}}
+          {{- end }}
         - name: {{ .Chart.Name }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ $imageTag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - --tls-cert-file=/tls/tls.crt
