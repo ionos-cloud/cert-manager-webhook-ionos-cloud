@@ -92,7 +92,7 @@ jobs:
           fail-on-error: 'true'
       - name: Upload Reports
         if: always()
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-reports
           path: ./out/report.xml
@@ -109,7 +109,7 @@ jobs:
 
       - name: Go Snapshot Release
         if: github.event_name == 'pull_request'
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser
           version: v2.9.0
