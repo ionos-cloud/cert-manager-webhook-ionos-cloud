@@ -1,6 +1,6 @@
 [![GoTemplate](https://img.shields.io/badge/go/template-black?logo=go)](https://github.com/golang-standards/project-layout)
 [![Go](https://img.shields.io/badge/go-1.25.1-blue?logo=go)](https://golang.org/)
-[![Cert Manager](https://img.shields.io/badge/cert--manager-1.19.1-blue?logo=cert-manager)](https://cert-manager.io/)
+[![Cert Manager](https://img.shields.io/badge/cert--manager-1.19.3-blue?logo=cert-manager)](https://cert-manager.io/)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/cert-manager-webhook-ionos-cloud)](https://artifacthub.io/packages/search?repo=cert-manager-webhook-ionos-cloud)
 
 ![Alt text](.github/IONOS.CLOUD.BLU.svg?raw=true)
@@ -185,7 +185,7 @@ The e2e tests can be run using the `run-e2e-tests.sh`:
 export IONOS_TOKEN=THE_TOKEN
 export TEST_ZONE_NAME=THE_ZONE_NAME
 
-./run-e2e-tests.sh --cert-manager-version v1.19.1
+./run-e2e-tests.sh --cert-manager-version $version
 
 ```
 
@@ -193,4 +193,11 @@ Based on the operating system and the current user permissions, `sudo` may be ne
 
 ### Compatibility:
 
-This extension is **tested** with the three latest cert-manager minor versions.
+The helm chart uses the latest release unless the version is explicitly set using `--set image.tag=$VERSION`. 
+
+| cert-manager-webhook-ionos-cloud | cert-manager |
+|----------------------------------|--------------|
+| v0.3.3                           | v1.19.3      |
+| v0.3.0                           | v1.19.1      |
+| v0.2.2,v0.2.1                    | v1.18.1      |
+| v0.1.0,v0.1.1                    | v1.17.1      |
