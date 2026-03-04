@@ -108,6 +108,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Go Snapshot Release
+        if: github.event_name == 'pull_request'
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
