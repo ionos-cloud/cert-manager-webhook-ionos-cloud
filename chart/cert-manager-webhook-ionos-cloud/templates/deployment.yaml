@@ -18,7 +18,7 @@ spec:
       serviceAccountName: {{ include "cert-manager-webhook-ionos-cloud.fullname" . }}
       containers:
           {{- $imageTag := .Values.image.tag -}}
-          {{- if .Chart.AppVersion }}
+          {{- if and .Chart.AppVersion (not .Values.image.override) }}
               {{- $imageTag = .Chart.AppVersion -}}
           {{- end }}
         - name: {{ .Chart.Name }}
