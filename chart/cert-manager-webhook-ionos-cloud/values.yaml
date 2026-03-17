@@ -38,6 +38,7 @@ image:
   tag: latest
   repository: ghcr.io/ionos-cloud/cert-manager-webhook-ionos-cloud
   pullPolicy: IfNotPresent
+  override: false
 
 nameOverride: ""
 fullnameOverride: ""
