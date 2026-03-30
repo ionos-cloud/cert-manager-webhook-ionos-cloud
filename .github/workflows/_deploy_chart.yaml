@@ -22,7 +22,7 @@ jobs:
               run: |
                 echo "chart-version=$(yq '.version' chart/cert-manager-webhook-ionos-cloud/Chart.yaml)" >> "$GITHUB_OUTPUT"
             - name: Install helm chart
-              uses: azure/setup-helm@v4.3.1
+              uses: azure/setup-helm@v5.0.0
             - name: Package helm chart
               run: |
                 helm package chart/cert-manager-webhook-ionos-cloud/ --app-version ${{ steps.get-latest-tag.outputs.latest-tag }}
