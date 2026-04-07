@@ -197,6 +197,7 @@ The helm chart uses the latest release unless the version is explicitly set usin
 
 | cert-manager-webhook-ionos-cloud | cert-manager |
 |----------------------------------|--------------|
+| v0.3.4                           | v1.19.4      |
 | v0.3.3                           | v1.19.3      |
 | v0.3.0                           | v1.19.1      |
 | v0.2.2,v0.2.1                    | v1.18.1      |
