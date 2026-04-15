@@ -9,6 +9,8 @@
 # 
 # Required environment variables: IONOS_TOKEN, TEST_ZONE_NAME
 
+set -e
+
 while [[ $# -gt 0 ]]; do
   key="$1"
   case $key in
@@ -63,14 +65,15 @@ kind load docker-image cert-manager-e2e-tests:$IMAGE_TAG -n chart-testing
 helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-cloud \
     --set image.repository=cert-manager-e2e-tests \
     --set image.tag=$IMAGE_TAG
+    -n cert-manager
 
 # assert the deployment is ready
-kubectl wait --timeout=30s --for=jsonpath='{.status.readyReplicas}'=1 deployment/cert-manager-webhook-ionos-cloud
+kubectl wait --timeout=30s --for=condition=Available=True deployment/cert-manager-webhook-ionos-cloud -n cert-manager
 
 # create the secret
 kubectl create secret generic cert-manager-webhook-ionos-cloud --from-literal=auth-token="$(echo $IONOS_TOKEN)"
 
-#create the issueq
+#create the issuer
 kubectl apply -f .github/test-manifests/issuer.yaml
 
 # assert the deployment is ready
