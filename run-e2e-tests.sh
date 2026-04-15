@@ -64,7 +64,7 @@ kind load docker-image cert-manager-e2e-tests:$IMAGE_TAG -n chart-testing
 # install the chart
 helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-cloud \
     --set image.repository=cert-manager-e2e-tests \
-    --set image.tag=$IMAGE_TAG
+    --set image.tag=$IMAGE_TAG \
     -n cert-manager
 
 # assert the deployment is ready
