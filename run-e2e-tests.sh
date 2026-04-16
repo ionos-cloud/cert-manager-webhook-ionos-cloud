@@ -71,7 +71,7 @@ helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-c
 kubectl wait --timeout=30s --for=condition=Available=True deployment/cert-manager-webhook-ionos-cloud -n cert-manager
 
 # create the secret
-kubectl create secret generic cert-manager-webhook-ionos-cloud --from-literal=auth-token="$(echo $IONOS_TOKEN)"
+kubectl create secret generic cert-manager-webhook-ionos-cloud --from-literal=auth-token="$(echo $IONOS_TOKEN)" -n cert-manager
 
 #create the issuer
 kubectl apply -f .github/test-manifests/issuer.yaml
@@ -80,7 +80,7 @@ kubectl apply -f .github/test-manifests/issuer.yaml
 kubectl wait --timeout=10s --for=condition=Ready=True issuer/letsencrypt-ionos-e2e
 
 # create the test zone
-PREFIX=$(date +%k%M%N)
+export PREFIX=$(date +%k%M%N)
 ZONE_ID=$(curl -v -H "Authorization: Bearer $IONOS_TOKEN" --json \
 "{\"properties\":{\"zoneName\":\"$PREFIX.$TEST_ZONE_NAME\",\"description\":\"used for e2e testing for cert-manager webhook\",\"enabled\":true}}" \
 https://dns.de-fra.ionos.com/zones | jq -r .id)
