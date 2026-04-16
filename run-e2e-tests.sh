@@ -89,7 +89,7 @@ https://dns.de-fra.ionos.com/zones | jq -r .id)
 cat .github/test-manifests/certificate.tmpl.yaml | envsubst | kubectl apply -f -
 
 # assert the certificate is ready
-kubectl wait --timeout=7m --for=condition=Ready=True certificate/certificate-ionos-with-dns-01-test -o yaml
+kubectl wait --timeout=7m --for=condition=Ready=True certificate/certificate-ionos-with-dns-01-test
 
 curl -XDELETE -v -H "Authorization: Bearer $IONOS_TOKEN" \
 "https://dns.de-fra.ionos.com/zones/$ZONE_ID"
