@@ -1,6 +1,6 @@
 [![GoTemplate](https://img.shields.io/badge/go/template-black?logo=go)](https://github.com/golang-standards/project-layout)
-[![Go](https://img.shields.io/badge/go-1.26.1-blue?logo=go)](https://golang.org/)
-[![Cert Manager](https://img.shields.io/badge/cert--manager-1.19.4-blue?logo=cert-manager)](https://cert-manager.io/)
+[![Go](https://img.shields.io/badge/go-1.26.4-blue?logo=go)](https://golang.org/)
+[![Cert Manager](https://img.shields.io/badge/cert--manager-1.20.4-blue?logo=cert-manager)](https://cert-manager.io/)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/cert-manager-webhook-ionos-cloud)](https://artifacthub.io/packages/helm/cert-manager-webhook-ionos-cloud/cert-manager-webhook-ionos-cloud)
 
 ![Alt text](.github/IONOS.CLOUD.BLU.svg?raw=true)
@@ -197,6 +197,7 @@ The helm chart uses the latest release unless the version is explicitly set usin
 
 | cert-manager-webhook-ionos-cloud | cert-manager |
 |----------------------------------|--------------|
+| v0.5.0                           | v1.20.1      |
 | v0.4.0                           | v1.19.4      |
 | v0.3.3                           | v1.19.3      |
 | v0.3.0                           | v1.19.1      |
