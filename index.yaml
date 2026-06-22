@@ -2,14 +2,14 @@ apiVersion: v1
 entries:
   cert-manager-webhook-ionos-cloud:
   - apiVersion: v2
-    appVersion: v0.4.0
-    created: "2026-04-16T17:51:29.848326704Z"
+    appVersion: v0.5.0
+    created: "2026-06-22T13:02:31.9768944Z"
     description: A Helm chart for Kubernetes
-    digest: d8890830930eac29ff89522a9f8c779723e8403ea4d6d748d654e2c798ba30f5
+    digest: c31bf2d4025f7306aa24214818cecacee26d176d0872e0d104c7f15fecf15714
     name: cert-manager-webhook-ionos-cloud
     type: application
     urls:
-    - https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/0.3.2-chart+v0.4.0/cert-manager-webhook-ionos-cloud-0.3.2.tgz
+    - https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/0.3.2-chart+v0.5.0/cert-manager-webhook-ionos-cloud-0.3.2.tgz
     version: 0.3.2
   - apiVersion: v2
     appVersion: v0.3.3
@@ -61,4 +61,4 @@ entries:
     urls:
     - https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/chart-v0.1.0/cert-manager-webhook-ionos-cloud-0.1.0.tgz
     version: 0.1.0
-generated: "2026-04-16T17:51:29.847820925Z"
+generated: "2026-06-22T13:02:31.976426367Z"
