@@ -10,7 +10,7 @@ jobs:
           uses: helm/kind-action@v1
         - uses: azure/setup-helm@v5.0.0
           name: install helm
-        - uses: actions/checkout@v6
+        - uses: actions/checkout@v7
           name: checkout
         - name: get current cert manager version
           id: get-cert-manager-version
