@@ -516,6 +516,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 					}
 				}
 			}
+
 			resolver := NewResolver(testNamespace, createTestK8Factory(s.k8Client), createTestDNSFactory(s.dnsAPIMock), s.logger)
 			resolver.Initialize(&rest.Config{}, nil)
 			err := resolver.CleanUp(tc.whenChallenge)
@@ -545,7 +546,8 @@ func setUpK8ClientExpectations(k8Client *mocks.K8Client, err error, t *testing.T
 	secretsInterface := mocks.NewSecretInterface(t)
 	coreV1Interface := mocks.NewCoreV1Interface(t)
 	k8Secret := &corev1.Secret{}
-	k8Secret.StringData = map[string]string{defaultAuthTokenSecretKey: "token"}
+	//k8Secret.StringData = map[string]string{defaultAuthTokenSecretKey: "token"}
+	k8Secret.Data = map[string][]byte{defaultAuthTokenSecretKey: []byte("token")}
 	secretsInterface.EXPECT().Get(context.Background(), defaultSecretName, v1.GetOptions{}).
 		Return(k8Secret, err)
 

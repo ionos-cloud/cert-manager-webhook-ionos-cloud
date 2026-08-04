@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns"
+	ionoscloud_auth "github.com/ionos-cloud/sdk-go-auth"
 	ionoscloud "github.com/ionos-cloud/sdk-go-dns"
 
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook"
@@ -22,6 +23,8 @@ import (
 const (
 	defaultSecretName         = "cert-manager-webhook-ionos-cloud"
 	defaultAuthTokenSecretKey = "auth-token"
+	defaultUsernameSecretKey  = "username"
+	defaultPasswordSecretKey  = "password"
 )
 
 type K8Client interface {
@@ -35,6 +38,8 @@ type K8ClientFactory func(cfg *rest.Config) (K8Client, error)
 type ionosCloudDNS01SolverConfig struct {
 	SecretRef          string `json:"secretRef"`
 	AuthTokenSecretKey string `json:"authTokenSecretKey"`
+	UsernameSecretKey  string `json:"usernameSecretKey"`
+	PasswordSecretKey  string `json:"passwordSecretKey"`
 }
 
 func NewResolver(namespace string, k8ClientFactory K8ClientFactory, dnsAPIFactory DNSAPIFactory, logger *zap.Logger) webhook.Solver {
@@ -235,12 +240,35 @@ func (s *ionosCloudDnsProviderResolver) newDNSAPIFromK8Secret(
 		config.AuthTokenSecretKey = defaultAuthTokenSecretKey
 	}
 
+	if config.UsernameSecretKey == "" {
+		config.UsernameSecretKey = defaultUsernameSecretKey
+	}
+
+	if config.PasswordSecretKey == "" {
+		config.PasswordSecretKey = defaultPasswordSecretKey
+	}
+
 	secret, err := s.k8Client.CoreV1().Secrets(s.namespace).Get(context.Background(), config.SecretRef, v1.GetOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get secret %s from namespace %s: %w", config.SecretRef, s.namespace, err)
 	}
 
-	return s.dnsAPIFactory(string(secret.Data[config.AuthTokenSecretKey])), nil
+	token := string(secret.Data[config.AuthTokenSecretKey])
+
+	if token == "" {
+		s.logger.Info("token not provided, attempting to authenticate using username and password")
+		configuration := ionoscloud_auth.NewConfiguration(string(secret.Data[config.AuthTokenSecretKey]),
+			string(secret.Data[config.PasswordSecretKey]), "", "")
+		apiClient := ionoscloud_auth.NewAPIClient(configuration)
+		jwtToken, _, err := apiClient.TokensApi.TokensGenerate(context.Background()).Ttl(3600).Execute()
+		if err != nil {
+			return nil, fmt.Errorf("failed to obtain token from ionos api: %w", err)
+		}
+
+		token = *jwtToken.Token
+	}
+
+	return s.dnsAPIFactory(token), nil
 }
 
 func recordNameFromChallenge(ch *v1alpha1.ChallengeRequest) string {
