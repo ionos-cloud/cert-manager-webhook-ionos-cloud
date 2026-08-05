@@ -64,11 +64,11 @@ fmt: ## Run go fmt against code.
 
 .PHONY: lint
 lint: 
-	$(GO_TOOL) github.com/golangci/golangci-lint/cmd/golangci-lint run -v
+	$(GO_TOOL) github.com/golangci/golangci-lint/v2/cmd/golangci-lint run -v
 
 .PHONY: lint-with-fix
 lint-with-fix: ## Run golangci-lint against code with fix.
-	$(GO_TOOL) github.com/golangci/golangci-lint/cmd/golangci-lint run --build-tags unit --fix
+	$(GO_TOOL) github.com/golangci/golangci-lint/v2/cmd/golangci-lint run --build-tags unit --fix
 
 .PHONY: vet
 vet: ## Run go vet against code.

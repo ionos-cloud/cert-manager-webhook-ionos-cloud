@@ -12,7 +12,9 @@ import (
 	"github.com/cert-manager/cert-manager/pkg/acme/webhook/apis/acme/v1alpha1"
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/clouddns"
 	"github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/internal/mocks"
+	ionoscloud_auth "github.com/ionos-cloud/sdk-go-auth"
 	dnsclient "github.com/ionos-cloud/sdk-go-dns"
+
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"go.uber.org/zap"
@@ -23,8 +25,14 @@ import (
 )
 
 var (
-	typeTxtRecord = toPTR(dnsclient.RecordType("TXT"))
-	errK8Client   = errors.New("k8 client error")
+	typeTxtRecord                  = toPTR(dnsclient.RecordType("TXT"))
+	errK8Client                    = errors.New("k8 client error")
+	errTokenGeneration             = errors.New("token generation failed")
+	secretDataWithToken            = map[string][]byte{defaultAuthTokenSecretKey: []byte("token")}
+	secretDataWithUsernamePassword = map[string][]byte{
+		defaultUsernameSecretKey: []byte("token"),
+		defaultPasswordSecretKey: []byte("password"),
+	}
 )
 
 const testNamespace = "unit-test"
@@ -54,17 +62,19 @@ func (s *ResolverTestSuite) setupMocks() {
 
 func (s *ResolverTestSuite) TestPresent() {
 	testCases := []struct {
-		name                  string
-		givenZones            []dnsclient.ZoneRead
-		givenRecords          []dnsclient.RecordRead
-		whenChallenge         *v1alpha1.ChallengeRequest
-		whenZonesReadError    error
-		whenRecordsReadError  error
-		whenRecordCreateError error
-		whenK8ClientError     error
-		thenError             string
-		whenConfigParseError  bool
-		thenRecordCreateKey   string
+		name                   string
+		givenZones             []dnsclient.ZoneRead
+		givenRecords           []dnsclient.RecordRead
+		whenChallenge          *v1alpha1.ChallengeRequest
+		whenZonesReadError     error
+		whenRecordsReadError   error
+		whenRecordCreateError  error
+		whenK8ClientError      error
+		whenTokenGenerateError error
+		whenK8SecretContent    map[string][]byte
+		thenError              string
+		whenConfigParseError   bool
+		thenRecordCreateKey    string
 	}{
 		{
 			name:       "invalid config json",
@@ -94,6 +104,20 @@ func (s *ResolverTestSuite) TestPresent() {
 			thenError:         "failed to create IONOS Cloud API client: failed to get secret cert-manager-webhook-ionos-cloud from namespace unit-test: k8 client error",
 		},
 		{
+			name:       "generate token error",
+			givenZones: []dnsclient.ZoneRead{},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			whenK8SecretContent:    secretDataWithUsernamePassword,
+			whenTokenGenerateError: errTokenGeneration,
+			thenError:              "failed to create IONOS Cloud API client: failed generate token: token generation failed",
+		},
+		{
 			name:       "no zones",
 			givenZones: []dnsclient.ZoneRead{},
 			whenChallenge: &v1alpha1.ChallengeRequest{
@@ -103,7 +127,8 @@ func (s *ResolverTestSuite) TestPresent() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenError: "zone 'test.com' not found",
+			whenK8SecretContent: secretDataWithToken,
+			thenError:           "zone 'test.com' not found",
 		},
 		{
 			name: "zone already exists",
@@ -124,6 +149,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
+			whenK8SecretContent: secretDataWithToken,
 			thenRecordCreateKey: "test-key",
 		},
 		{
@@ -154,6 +180,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
+			whenK8SecretContent: secretDataWithToken,
 			thenRecordCreateKey: "", // no record should be created
 		},
 		{
@@ -184,6 +211,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
+			whenK8SecretContent: secretDataWithToken,
 			thenRecordCreateKey: "test-key",
 		},
 		{
@@ -197,7 +225,8 @@ func (s *ResolverTestSuite) TestPresent() {
 				ResolvedZone: "test.com",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenError: "error fetching zones",
+			whenK8SecretContent: secretDataWithToken,
+			thenError:           "error fetching zones",
 		},
 		{
 			name: "error fetching records",
@@ -219,7 +248,8 @@ func (s *ResolverTestSuite) TestPresent() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenError: "error fetching records",
+			whenK8SecretContent: secretDataWithToken,
+			thenError:           "error fetching records",
 		},
 		{
 			name: "error creating record",
@@ -242,6 +272,7 @@ func (s *ResolverTestSuite) TestPresent() {
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
 			thenRecordCreateKey: "test-key",
+			whenK8SecretContent: secretDataWithToken,
 			thenError:           "error creating record",
 		},
 	}
@@ -249,9 +280,9 @@ func (s *ResolverTestSuite) TestPresent() {
 		s.Run(tc.name, func() {
 			s.setupMocks()
 			if !tc.whenConfigParseError {
-				setUpK8ClientExpectations(s.k8Client, tc.whenK8ClientError, s.T())
+				setUpK8ClientExpectations(s.T(), s.k8Client, tc.whenK8ClientError, tc.whenK8SecretContent)
 			}
-			if !tc.whenConfigParseError && tc.whenK8ClientError == nil {
+			if !tc.whenConfigParseError && tc.whenK8ClientError == nil && tc.whenTokenGenerateError == nil {
 				zoneName := strings.TrimSuffix(tc.whenChallenge.ResolvedZone, ".")
 				if tc.givenZones != nil {
 					zoneReadList := dnsclient.ZoneReadList{
@@ -273,7 +304,8 @@ func (s *ResolverTestSuite) TestPresent() {
 				}
 			}
 
-			resolver := NewResolver(testNamespace, createTestK8Factory(s.k8Client), createTestDNSFactory(s.dnsAPIMock), s.logger)
+			resolver := NewResolver(testNamespace, createTestK8Factory(s.k8Client),
+				createTestDNSFactory(s.dnsAPIMock), createTestGenerateTokenFunc(tc.whenTokenGenerateError), s.logger)
 			resolver.Initialize(&rest.Config{}, nil)
 			err := resolver.Present(tc.whenChallenge)
 			if tc.thenError != "" {
@@ -288,17 +320,19 @@ func (s *ResolverTestSuite) TestPresent() {
 
 func (s *ResolverTestSuite) TestCleanUp() {
 	testCases := []struct {
-		name                  string
-		givenZones            []dnsclient.ZoneRead
-		givenRecords          []dnsclient.RecordRead
-		whenChallenge         *v1alpha1.ChallengeRequest
-		whenZonesReadError    error
-		whenRecordsReadError  error
-		whenRecordDeleteError error
-		whenK8ClientError     error
-		whenConfigParseError  bool
-		thenDeleteRecordId    string
-		thenError             string
+		name                   string
+		givenZones             []dnsclient.ZoneRead
+		givenRecords           []dnsclient.RecordRead
+		whenChallenge          *v1alpha1.ChallengeRequest
+		whenZonesReadError     error
+		whenRecordsReadError   error
+		whenRecordDeleteError  error
+		whenK8ClientError      error
+		whenConfigParseError   bool
+		whenTokenGenerateError error
+		thenDeleteRecordId     string
+		whenK8SecretContent    map[string][]byte
+		thenError              string
 	}{
 		{
 			name:       "invalid config json",
@@ -328,6 +362,20 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			thenError:         "failed to create IONOS Cloud API client: failed to get secret cert-manager-webhook-ionos-cloud from namespace unit-test: k8 client error",
 		},
 		{
+			name:       "generate token error",
+			givenZones: []dnsclient.ZoneRead{},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			whenK8SecretContent:    secretDataWithUsernamePassword,
+			whenTokenGenerateError: errTokenGeneration,
+			thenError:              "failed to create IONOS Cloud API client: failed generate token: token generation failed",
+		},
+		{
 			name:       "no zones",
 			givenZones: []dnsclient.ZoneRead{},
 			whenChallenge: &v1alpha1.ChallengeRequest{
@@ -337,8 +385,9 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenError:          "", // no error
-			thenDeleteRecordId: "", // no record to delete
+			whenK8SecretContent: secretDataWithToken,
+			thenError:           "", // no error
+			thenDeleteRecordId:  "", // no record to delete
 		},
 		{
 			name: "zone exists, but no record",
@@ -359,8 +408,9 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenError:          "", // no error
-			thenDeleteRecordId: "", // no record to delete
+			whenK8SecretContent: secretDataWithToken,
+			thenError:           "", // no error
+			thenDeleteRecordId:  "", // no record to delete
 		},
 		{
 			name: "zone and record with same name exists, but has a different key",
@@ -390,8 +440,9 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenError:          "", // no error
-			thenDeleteRecordId: "", // no record to delete
+			whenK8SecretContent: secretDataWithToken,
+			thenError:           "", // no error
+			thenDeleteRecordId:  "", // no record to delete
 		},
 		{
 			name:               "zone read error",
@@ -404,7 +455,8 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenError: "error fetching zones",
+			whenK8SecretContent: secretDataWithToken,
+			thenError:           "error fetching zones",
 		},
 		{
 			name: "record read error",
@@ -426,7 +478,8 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenError: "error fetching records",
+			whenK8SecretContent: secretDataWithToken,
+			thenError:           "error fetching records",
 		},
 		{
 			name: "record delete error",
@@ -456,6 +509,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
+			whenK8SecretContent:   secretDataWithToken,
 			whenRecordDeleteError: fmt.Errorf("error deleting record"),
 			thenError:             "error deleting record",
 			thenDeleteRecordId:    "test-record-id",
@@ -488,15 +542,16 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				ResolvedZone: "test.com.",
 				ResolvedFQDN: "_acme-challenge.test.com.",
 			},
-			thenDeleteRecordId: "test-record-id",
+			whenK8SecretContent: secretDataWithToken,
+			thenDeleteRecordId:  "test-record-id",
 		},
 	}
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			s.setupMocks()
 			if !tc.whenConfigParseError {
-				setUpK8ClientExpectations(s.k8Client, tc.whenK8ClientError, s.T())
-				if tc.whenK8ClientError == nil {
+				setUpK8ClientExpectations(s.T(), s.k8Client, tc.whenK8ClientError, tc.whenK8SecretContent)
+				if tc.whenK8ClientError == nil && tc.whenTokenGenerateError == nil {
 					zoneName := strings.TrimSuffix(tc.whenChallenge.ResolvedZone, ".")
 					zoneReadList := dnsclient.ZoneReadList{
 						Items: &tc.givenZones,
@@ -517,7 +572,7 @@ func (s *ResolverTestSuite) TestCleanUp() {
 				}
 			}
 
-			resolver := NewResolver(testNamespace, createTestK8Factory(s.k8Client), createTestDNSFactory(s.dnsAPIMock), s.logger)
+			resolver := NewResolver(testNamespace, createTestK8Factory(s.k8Client), createTestDNSFactory(s.dnsAPIMock), createTestGenerateTokenFunc(tc.whenTokenGenerateError), s.logger)
 			resolver.Initialize(&rest.Config{}, nil)
 			err := resolver.CleanUp(tc.whenChallenge)
 			if tc.thenError != "" {
@@ -542,12 +597,17 @@ func createTestK8Factory(k8Client *mocks.K8Client) K8ClientFactory {
 	}
 }
 
-func setUpK8ClientExpectations(k8Client *mocks.K8Client, err error, t *testing.T) {
+func createTestGenerateTokenFunc(err error) GenerateTokenFunc {
+	return func(cfg *ionoscloud_auth.Configuration) (string, error) {
+		return "token", err
+	}
+}
+
+func setUpK8ClientExpectations(t *testing.T, k8Client *mocks.K8Client, err error, data map[string][]byte) {
 	secretsInterface := mocks.NewSecretInterface(t)
 	coreV1Interface := mocks.NewCoreV1Interface(t)
 	k8Secret := &corev1.Secret{}
-	//k8Secret.StringData = map[string]string{defaultAuthTokenSecretKey: "token"}
-	k8Secret.Data = map[string][]byte{defaultAuthTokenSecretKey: []byte("token")}
+	k8Secret.Data = data
 	secretsInterface.EXPECT().Get(context.Background(), defaultSecretName, v1.GetOptions{}).
 		Return(k8Secret, err)
 

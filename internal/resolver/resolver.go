@@ -35,6 +35,8 @@ type DNSAPIFactory func(token string) clouddns.DNSAPI
 
 type K8ClientFactory func(cfg *rest.Config) (K8Client, error)
 
+type GenerateTokenFunc func(cfg *ionoscloud_auth.Configuration) (string, error)
+
 type ionosCloudDNS01SolverConfig struct {
 	SecretRef          string `json:"secretRef"`
 	AuthTokenSecretKey string `json:"authTokenSecretKey"`
@@ -42,11 +44,14 @@ type ionosCloudDNS01SolverConfig struct {
 	PasswordSecretKey  string `json:"passwordSecretKey"`
 }
 
-func NewResolver(namespace string, k8ClientFactory K8ClientFactory, dnsAPIFactory DNSAPIFactory, logger *zap.Logger) webhook.Solver {
+func NewResolver(namespace string, k8ClientFactory K8ClientFactory, dnsAPIFactory DNSAPIFactory, generateToken GenerateTokenFunc,
+	logger *zap.Logger,
+) webhook.Solver {
 	return &ionosCloudDnsProviderResolver{
 		k8ClientFactory: k8ClientFactory,
 		namespace:       namespace,
 		dnsAPIFactory:   dnsAPIFactory,
+		generateToken:   generateToken,
 		logger:          logger,
 	}
 }
@@ -56,6 +61,7 @@ type ionosCloudDnsProviderResolver struct {
 	namespace       string
 	dnsAPIFactory   DNSAPIFactory
 	k8Client        K8Client
+	generateToken   GenerateTokenFunc
 	logger          *zap.Logger
 }
 
@@ -223,7 +229,8 @@ func (s *ionosCloudDnsProviderResolver) deleteRecord(ch *v1alpha1.ChallengeReque
 }
 
 func (s *ionosCloudDnsProviderResolver) newDNSAPIFromK8Secret(
-	challengeConfig *apiextensionsv1.JSON) (clouddns.DNSAPI, error) {
+	challengeConfig *apiextensionsv1.JSON,
+) (clouddns.DNSAPI, error) {
 	var config ionosCloudDNS01SolverConfig
 
 	if challengeConfig != nil && len(challengeConfig.Raw) > 0 {
@@ -259,13 +266,10 @@ func (s *ionosCloudDnsProviderResolver) newDNSAPIFromK8Secret(
 		s.logger.Info("token not provided, attempting to authenticate using username and password")
 		configuration := ionoscloud_auth.NewConfiguration(string(secret.Data[config.AuthTokenSecretKey]),
 			string(secret.Data[config.PasswordSecretKey]), "", "")
-		apiClient := ionoscloud_auth.NewAPIClient(configuration)
-		jwtToken, _, err := apiClient.TokensApi.TokensGenerate(context.Background()).Ttl(3600).Execute()
+		token, err = s.generateToken(configuration)
 		if err != nil {
-			return nil, fmt.Errorf("failed to obtain token from ionos api: %w", err)
+			return nil, fmt.Errorf("failed generate token: %w", err)
 		}
-
-		token = *jwtToken.Token
 	}
 
 	return s.dnsAPIFactory(token), nil
@@ -280,11 +284,23 @@ func zoneNameFromChallenge(ch *v1alpha1.ChallengeRequest) string {
 }
 
 func DefaultDNSAPIFactory(token string) clouddns.DNSAPI {
-	return clouddns.CreateDNSAPI(ionoscloud.NewAPIClient(
-		ionoscloud.NewConfiguration("", "", token, "")),
+	return clouddns.CreateDNSAPI(
+		ionoscloud.NewAPIClient(
+			ionoscloud.NewConfiguration("", "", token, ""),
+		),
 	)
 }
 
 func DefaultK8FactoryFactory(config *rest.Config) (K8Client, error) {
 	return kubernetes.NewForConfig(config)
+}
+
+func DefaultGenerateTokenFunc(cfg *ionoscloud_auth.Configuration) (string, error) {
+	apiClient := ionoscloud_auth.NewAPIClient(cfg)
+	jwtToken, _, err := apiClient.TokensApi.TokensGenerate(context.Background()).Ttl(3600).Execute()
+	if err != nil {
+		return "", fmt.Errorf("failed to obtain token from ionos api: %w", err)
+	}
+
+	return *jwtToken.Token, nil
 }
