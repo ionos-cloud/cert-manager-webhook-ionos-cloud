@@ -5,13 +5,13 @@ VERSION ?= 0.0.1
 IMAGE_TAG_BASE ?= ionos-cloud/cert-manager-webhook-ionos-cloud
 IMG ?= $(IMAGE_TAG_BASE):$(VERSION)
 
-BUILD_VERSION ?= $(shell git branch --show-current)
-BUILD_COMMIT ?= $(shell git rev-parse --short HEAD)
-BUILD_TIMESTAMP ?= $(shell date -u '+%Y-%m-%d %H:%M:%S')
 GO_TOOL := go tool
+
 
 PWD = $(shell pwd)
 export PATH := $(PWD)/bin:$(PATH)
+
+SETUP_ENV_TEST=$(shell $(GO_TOOL) sigs.k8s.io/controller-runtime/tools/setup-envtest use $(ENVTEST_K8S_VERSION) -p path --bin-dir $(PWD)/bin/tools/ -v info)
 
 ##@ General
 
@@ -103,7 +103,11 @@ check-licenses: ## Check the licenses
 conformance-test-with-token: ## runs conformance tests without setup, if running locally no need to repeat the setup steps for every run
 	kubectl create secret generic test-ionos-cloud-credentials \
 	--from-literal=token=$$IONOS_TOKEN --dry-run=client -o yaml > cmd/webhook/testdata/ionos-credentials.test.yaml
-	KUBEBUILDER_ASSETS="$(shell $(GO_TOOL) sigs.k8s.io/controller-runtime/tools/setup-envtest use $(ENVTEST_K8S_VERSION) -p path --bin-dir $(PWD)/bin/tools/)" \
+	mkdir -p bin/tools
+	chmod 755 $(SETUP_ENV_TEST)/kubectl $(SETUP_ENV_TEST)/etcd $(SETUP_ENV_TEST)/kube-apiserver
+	cp $(SETUP_ENV_TEST)/kubectl bin/tools
+	cp $(SETUP_ENV_TEST)/etcd bin/tools
+	cp $(SETUP_ENV_TEST)/kube-apiserver bin/tools
 	TEST_ASSET_ETCD="$(PWD)/bin/tools/etcd" \
 	TEST_ASSET_KUBE_APISERVER="$(PWD)/bin/tools/kube-apiserver" \
 	TEST_ASSET_KUBECTL="$(PWD)/bin/tools/kubectl" \
@@ -112,7 +116,11 @@ conformance-test-with-token: ## runs conformance tests without setup, if running
 conformance-test-with-username-password: ## runs conformance tests without setup, if running locally no need to repeat the setup steps for every run
 	kubectl create secret generic test-ionos-cloud-credentials \
 	--from-literal=username=$$IONOS_USERNAME --from-literal=password=$$IONOS_PASSWORD --dry-run=client -o yaml > cmd/webhook/testdata/ionos-credentials.test.yaml
-	KUBEBUILDER_ASSETS="$(shell $(GO_TOOL) sigs.k8s.io/controller-runtime/tools/setup-envtest use $(ENVTEST_K8S_VERSION) -p path --bin-dir $(PWD)/bin/tools/)" \
+	mkdir -p bin/tools
+	chmod 755 $(SETUP_ENV_TEST)/kubectl $(SETUP_ENV_TEST)/etcd $(SETUP_ENV_TEST)/kube-apiserver
+	cp $(SETUP_ENV_TEST)/kubectl bin/tools
+	cp $(SETUP_ENV_TEST)/etcd bin/tools
+	cp $(SETUP_ENV_TEST)/kube-apiserver bin/tools
 	TEST_ASSET_ETCD="$(PWD)/bin/tools/etcd" \
 	TEST_ASSET_KUBE_APISERVER="$(PWD)/bin/tools/kube-apiserver" \
 	TEST_ASSET_KUBECTL="$(PWD)/bin/tools/kubectl" \
