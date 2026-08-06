@@ -6,8 +6,11 @@
 #
 # ARGUMENTS:
 #   --cert-manager-version the cert-manager version.
+#   --authentication-method the authentication method to use (token or username-password)
 # 
-# Required environment variables: IONOS_TOKEN, TEST_ZONE_NAME
+# Required environment variables: TEST_ZONE_NAME
+# if --authentication-method=token, IONOS_TOKEN needs to be set
+# if --authentication-method=username-password, IONOS_USERNAME and IONOS_PASSWORD
 
 set -e
 
@@ -19,6 +22,14 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
+    --authentication-method)
+      authentication_method="$2"
+      shift
+      shift
+      ;;
+    *)
+      shift
+      ;;
   esac
 done
 
@@ -28,9 +39,27 @@ if [ -z "$cert_manager_version" ]; then
   exit 1
 fi
 
-if [ -z "$IONOS_TOKEN" ]; then
-  echo "IONOS_TOKEN environment variable is required!"
-  exit 1
+if [[ "$authentication_method" == "token" ]]; then
+  if [ -z "$IONOS_TOKEN" ]; then
+    echo "IONOS_TOKEN environment variable is required!"
+    exit 1
+  fi
+elif [[ "$authentication_method" == "username-password" ]]; then
+  if [ -z "$IONOS_USERNAME" ]; then
+    echo "IONOS_TOKEN environment variable is required with --authenitcation-method=username-password!"
+    exit 1
+  elif [ -z "$IONOS_PASSWORD" ]; then
+    echo "IONOS_PASSWORD environment variable is required with --authenitcation-method=username-password!"
+    exit 1
+  fi
+else
+    if [ -z "$authentication_method" ]; then
+      echo "ERROR: --authentication-method flag is required!"
+      exit 1
+    else
+      echo "unknow authentication method $authentication_method"
+      exit 1
+    fi
 fi
 
 
@@ -71,7 +100,14 @@ helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-c
 kubectl wait --timeout=30s --for=condition=Available=True deployment/cert-manager-webhook-ionos-cloud -n cert-manager
 
 # create the secret
-kubectl create secret generic cert-manager-webhook-ionos-cloud --from-literal=auth-token="$(echo $IONOS_TOKEN)" -n cert-manager
+if [[ "$authentication_method" == "token" ]]; then
+kubectl create secret generic cert-manager-webhook-ionos-cloud \
+  --from-literal=auth-token="$$IONOS_TOKEN" -n cert-manager
+else
+kubectl create secret generic cert-manager-webhook-ionos-cloud \
+  --from-literal=username="$(echo $IONOS_USERNAME)" \
+  --from-literal=password="$(echo $IONOS_PASSWORD)" -n cert-manager
+fi
 
 #create the issuer
 kubectl apply -f .github/test-manifests/issuer.yaml

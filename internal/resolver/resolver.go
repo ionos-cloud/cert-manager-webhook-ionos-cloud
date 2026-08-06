@@ -264,7 +264,7 @@ func (s *ionosCloudDnsProviderResolver) newDNSAPIFromK8Secret(
 
 	if token == "" {
 		s.logger.Info("token not provided, attempting to authenticate using username and password")
-		configuration := ionoscloud_auth.NewConfiguration(string(secret.Data[config.AuthTokenSecretKey]),
+		configuration := ionoscloud_auth.NewConfiguration(string(secret.Data[config.UsernameSecretKey]),
 			string(secret.Data[config.PasswordSecretKey]), "", "")
 		token, err = s.generateToken(configuration)
 		if err != nil {
