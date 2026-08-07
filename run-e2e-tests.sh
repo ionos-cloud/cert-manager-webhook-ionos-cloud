@@ -102,7 +102,7 @@ kubectl wait --timeout=30s --for=condition=Available=True deployment/cert-manage
 # create the secret
 if [[ "$authentication_method" == "token" ]]; then
 kubectl create secret generic cert-manager-webhook-ionos-cloud \
-  --from-literal=auth-token="$$IONOS_TOKEN" -n cert-manager
+  --from-literal=auth-token="$(echo $IONOS_TOKEN)" -n cert-manager
 else
 kubectl create secret generic cert-manager-webhook-ionos-cloud \
   --from-literal=username="$(echo $IONOS_USERNAME)" \
