@@ -3,7 +3,7 @@ on:
   pull_request:
 
 jobs:
-    e2e-test:
+    e2e-tests-using-token:
       runs-on: ubuntu-latest
       steps:
         - name: Create k8s Kind Cluster
