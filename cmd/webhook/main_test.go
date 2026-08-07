@@ -23,7 +23,7 @@ func TestBasicConformance(t *testing.T) {
 	}
 
 	solver := resolver.NewResolver("basic-present-record", resolver.DefaultK8FactoryFactory,
-		resolver.DefaultDNSAPIFactory, logger)
+		resolver.DefaultDNSAPIFactory, resolver.DefaultGenerateTokenFunc, logger)
 	fixture := acmetest.NewFixture(solver,
 		// cert-manager adds a dot a the end of the zone name
 		acmetest.SetResolvedZone(zone+"."),
@@ -43,7 +43,7 @@ func TestExtendedConformance(t *testing.T) {
 	}
 
 	solver := resolver.NewResolver("extended-supports-multiple-same-domain", resolver.DefaultK8FactoryFactory,
-		resolver.DefaultDNSAPIFactory, logger)
+		resolver.DefaultDNSAPIFactory, resolver.DefaultGenerateTokenFunc, logger)
 	fixture := acmetest.NewFixture(solver,
 		// cert-manager adds a dot a the end of the zone name
 		acmetest.SetResolvedZone(zone+"."),

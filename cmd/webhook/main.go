@@ -36,5 +36,5 @@ func main() {
 	// webhook, where the Name() method will be used to disambiguate between
 	// the different implementations.
 	cmd.RunWebhookServer(groupName, resolver.NewResolver(namespace,
-		resolver.DefaultK8FactoryFactory, resolver.DefaultDNSAPIFactory, logger))
+		resolver.DefaultK8FactoryFactory, resolver.DefaultDNSAPIFactory, resolver.DefaultGenerateTokenFunc, logger))
 }

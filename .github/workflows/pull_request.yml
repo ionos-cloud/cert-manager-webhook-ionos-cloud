@@ -101,6 +101,8 @@ jobs:
         env:
           TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
           IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
+          IONOS_USERNAME: ${{ secrets.IONOS_USERNAME }}
+          IONOS_PASSWORD: ${{ secrets.IONOS_PASSWORD }}
         run: |
           make conformance-test
 
