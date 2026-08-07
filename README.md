@@ -44,7 +44,17 @@ Before proceeding, ensure you have the following:
 
 By convention, cert-manager is deployed in a namespace named `cert-manager`. The chart assumes this default and uses this value to add privileges to the cert-manager service account to enable the creation of resources of type "ionos-cloud". If you are deploying the cert-manager chart in a different namespace, you need to use the `certManager.namespace` chart value to set the name of the namespace where cert-manager is deployed. (e.g using `--set certManager.namespace=custom_namespace`)
 
-3. ***Initiation of IONOS Cloud Authentication Token Secret:***
+3. ***Authentication Methods***
+
+Both username/password, and token authentication and supported. The username/password method has the advantage of not requiring the user to intervene periodically. If a token is used, it falls under the responsibility of the user to renew the token periodically (IONOS tokens can have a maximum ttl of 365 days). Regardless of the method used, it is highly recommended to scope the privileges to the DNS management only. This can be done by creating a new IAM user under your main contract, and scoping the privileges to "Access and manage DNS". More details on how to create a bot user can be found [here](docs/create-bot-user.md)
+
+> [!IMPORTANT]  
+> It is not recommended to use the credentials of the root/Admin account. 
+
+1. ***Secret Creation:***
+
+For token authentication:
+
     See [IONOS Cloud Token management](https://docs.ionos.com/cloud/set-up-ionos-cloud/management/identity-access-management/token-manager) how to get a token.
 
     ```bash
@@ -53,7 +63,17 @@ By convention, cert-manager is deployed in a namespace named `cert-manager`. The
       --from-literal=auth-token=<IONOS CLOUD AUTH TOKEN>
     ```
 
-4. ***Configuration of ClusterIssuer/Issuer:***
+For username/password authentication:
+
+    ```bash
+    kubectl create secret generic cert-manager-webhook-ionos-cloud \
+      --namespace=cert-manager \
+      --from-literal=username=<IONOS CLOUD USERNAME> \
+      --from-literal=password=<IONOS CLOUD PASSWORD>
+    ```
+
+
+5. ***Configuration of the ClusterIssuer/Issuer:***
 
 The first step of using cert-manager is creating an Issuer or ClusterIssuer. 
 
@@ -79,6 +99,10 @@ spec:
             secretRef: cert-manager-webhook-ionos-cloud
             #optional, defaults to auth-token
             authTokenSecretKey: auth-token
+            #optional, defaults to username
+            usernameSecretKey: username
+            #optional, defaults to password
+            passwordSecretKey: password
 ```
 
 The following webhook config options are available:
@@ -86,9 +110,12 @@ The following webhook config options are available:
 | Name        | Description           | Required  | Default  |
 | :-------------: |:-------------:| :-----:| :-----:|
 | secretRef     | the secret name that contains the IONOS token, it should be in the same namespace as the webhook deployment  |   no | cert-manager-webhook-ionos-cloud |
-| authTokenSecretKey     | the secret key name that contains the secret (under `.data`)  |   no | auth-token |
+| authTokenSecretKey     | the secret key name that contains the token (under `.data`)  |   no | auth-token |
+| usernameSecretKey     | the secret key name that contains the username (under `.data`)  |   no | auth-token |
+| passwordSecretKey     | the secret key name that contains the password (under `.data`)  |   no | auth-token |
+
    
-5. ***Check with a demonstration of Ingress Integration with Wildcard SSL/TLS Certificate Generation***
+6. ***Check with a demonstration of Ingress Integration with Wildcard SSL/TLS Certificate Generation***
    Given the preceding configuration, it is possible to exploit the capabilities of the Issuer or ClusterIssuer to
    dynamically produce wildcard SSL/TLS certificates in the following manner:
     ```yaml
@@ -168,7 +195,14 @@ make help
  the following environment variables must be set:
  
  * TEST_ZONE_NAME: the zone for which DNS-01 will be performed
+
+depending on the authentication method, either: 
  * IONOS_TOKEN: the token for accessing IONOS DNS API
+or :
+* IONOS_USERNAME: the username of the bot account
+* IONOS_PASSWORD: the password of the bot acccount
+
+  
 
 ### e2e tests:
 
@@ -185,9 +219,21 @@ The e2e tests can be run using the `run-e2e-tests.sh`:
 export IONOS_TOKEN=THE_TOKEN
 export TEST_ZONE_NAME=THE_ZONE_NAME
 
-./run-e2e-tests.sh --cert-manager-version $version
+./run-e2e-tests.sh --cert-manager-version $version --authentication-method token
 
 ```
+
+or 
+
+```bash
+export IONOS_USERNAME=THE_USERNAME
+export IONOS_PASSWORD=THE_PASSWORD
+export TEST_ZONE_NAME=THE_ZONE_NAME
+
+./run-e2e-tests.sh --cert-manager-version $version --authentication-method username-password
+
+```
+
 
 Based on the operating system and the current user permissions, `sudo` may be needed to run the script. 
 
