@@ -360,6 +360,8 @@ github.com/iancoleman/strcase v0.3.0 h1:nTXanmYxhfFAMjZL34Ov6gkzEsSJZ5DbhxWjvSAS
 github.com/iancoleman/strcase v0.3.0/go.mod h1:iwCmte+B7n89clKwxIoIXy/HfoL7AsD47ZCWhYzw7ho=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
+github.com/ionos-cloud/sdk-go-auth v1.0.10 h1:aHWstSqtmWZxvNVEye42MBK9WcbTQnbc3GBgPj6tmcE=
+github.com/ionos-cloud/sdk-go-auth v1.0.10/go.mod h1:yVHBsuAWLbcnlgfviCDZ5HE7k3KwkmK7GjgaAvnnKxI=
 github.com/ionos-cloud/sdk-go-dns v1.4.0 h1:mZsjPigGn6V9wAHUaAtCXjecQ2ZkB4i6kro+hf+G7BE=
 github.com/ionos-cloud/sdk-go-dns v1.4.0/go.mod h1:8RHKLPUY6jtZqPtqeEIXmRFM7w4mii9pLXR7phLxwC8=
 github.com/jgautheron/goconst v1.8.1 h1:PPqCYp3K/xlOj5JmIe6O1Mj6r1DbkdbLtR3AJuZo414=
@@ -974,6 +976,8 @@ sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.34.0 h1:hSfpvjjTQXQY2
 sigs.k8s.io/apiserver-network-proxy/konnectivity-client v0.34.0/go.mod h1:Ve9uj1L+deCXFrPOk1LpFXqTg7LCFzFso6PA48q/XZw=
 sigs.k8s.io/controller-runtime v0.24.1 h1:miPEwrmirImAvgME1L9qebGHrOnGJoVmVdtOU9fRfo4=
 sigs.k8s.io/controller-runtime v0.24.1/go.mod h1:vFkfY5fGt5xAC/sKb8IBFKgWPNKG9OUG29dR8Y2wImw=
+sigs.k8s.io/controller-runtime/tools/setup-envtest v0.24.1 h1:l2AjyGE/PWub6EB165ij4/bpCK0TlY5NlhzIHfmGvmg=
+sigs.k8s.io/controller-runtime/tools/setup-envtest v0.24.1/go.mod h1:wpkYufRHTSw9ABET21/PkEL7kdGnmiZJ6o72t9p/1I8=
 sigs.k8s.io/gateway-api v1.6.0 h1:735YBRj5NXFrOGX0GoSjwzUIzbz8kiEOfADsqHFmHgE=
 sigs.k8s.io/gateway-api v1.6.0/go.mod h1:FVfx3t389ybeXOqvDghLbdvJdSCfI/PReqCUI3lu3mY=
 sigs.k8s.io/json v0.0.0-20250730193827-2d320260d730 h1:IpInykpT6ceI+QxKBbEflcR5EXP7sU1kvOlxwZh5txg=
