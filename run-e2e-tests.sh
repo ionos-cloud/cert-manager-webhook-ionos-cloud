@@ -28,7 +28,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     *)
-      shift
+      echo "ERROR: unknown argument: $1" >&2; exit 1
       ;;
   esac
 done
@@ -46,10 +46,10 @@ if [[ "$authentication_method" == "token" ]]; then
   fi
 elif [[ "$authentication_method" == "username-password" ]]; then
   if [ -z "$IONOS_USERNAME" ]; then
-    echo "IONOS_TOKEN environment variable is required with --authenitcation-method=username-password!"
+    echo "IONOS_USERNAME environment variable is required with --authentication-method=username-password!"
     exit 1
   elif [ -z "$IONOS_PASSWORD" ]; then
-    echo "IONOS_PASSWORD environment variable is required with --authenitcation-method=username-password!"
+    echo "IONOS_PASSWORD environment variable is required with --authentication-method=username-password!"
     exit 1
   fi
 else

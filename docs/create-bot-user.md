@@ -50,7 +50,7 @@ We should now create a new group with **Access and manage DNS** privileges:
 1. Go to the **Groups** tab in the upper panel and click on **+Create**
 ![management](images/dcd_create_group.png)
 2. Give the group a name and click on create
-3. Click on group name from the groups list
+3. Click on the group name from the groups list
 4. You should see on right side a tab with the privileges list
 5. Tick "Access and manage DNS" checkbox
 ![management](images/dcd_group_privileges.png)
@@ -66,7 +66,7 @@ After creating the group, we need to add our bot user to the group:
 
 ### 5. Verify Permissions
 
-1. Login to the IONOS Datacenter designer
+1. Login to the IONOS Datacenter Designer
 2. The user should NOT have access to:
    - Billing or invoicing
    - User/account management

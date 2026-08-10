@@ -46,7 +46,7 @@ By convention, cert-manager is deployed in a namespace named `cert-manager`. The
 
 3. ***Authentication Methods***
 
-Both username/password, and token authentication and supported. The username/password method has the advantage of not requiring the user to intervene periodically. If a token is used, it falls under the responsibility of the user to renew the token periodically (IONOS tokens can have a maximum ttl of 365 days). Regardless of the method used, it is highly recommended to scope the privileges to the DNS management only. This can be done by creating a new IAM user under your main contract, and scoping the privileges to "Access and manage DNS". More details on how to create a bot user can be found [here](docs/create-bot-user.md)
+Both username/password and token authentication and supported. The username/password method has the advantage of not requiring the user to intervene periodically. If a token is used, it falls under the responsibility of the user to renew the token periodically (IONOS tokens can have a maximum ttl of 365 days). Regardless of the method used, it is highly recommended to scope the privileges to the DNS management only. This can be done by creating a new IAM user under your main contract, and scoping the privileges to "Access and manage DNS". More details on how to create a bot user can be found [here](docs/create-bot-user.md)
 
 > [!IMPORTANT]  
 > It is not recommended to use the credentials of the root/Admin account. 
@@ -111,8 +111,8 @@ The following webhook config options are available:
 | :-------------: |:-------------:| :-----:| :-----:|
 | secretRef     | the secret name that contains the IONOS token, it should be in the same namespace as the webhook deployment  |   no | cert-manager-webhook-ionos-cloud |
 | authTokenSecretKey     | the secret key name that contains the token (under `.data`)  |   no | auth-token |
-| usernameSecretKey     | the secret key name that contains the username (under `.data`)  |   no | auth-token |
-| passwordSecretKey     | the secret key name that contains the password (under `.data`)  |   no | auth-token |
+| usernameSecretKey     | the secret key name that contains the username (under `.data`)  |   no | username |
+| passwordSecretKey     | the secret key name that contains the password (under `.data`)  |   no | password |
 
    
 6. ***Check with a demonstration of Ingress Integration with Wildcard SSL/TLS Certificate Generation***

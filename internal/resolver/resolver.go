@@ -263,6 +263,11 @@ func (s *ionosCloudDnsProviderResolver) newDNSAPIFromK8Secret(
 	token := string(secret.Data[config.AuthTokenSecretKey])
 
 	if token == "" {
+		username := string(secret.Data[config.UsernameSecretKey])
+		password := string(secret.Data[config.PasswordSecretKey])
+		if username == "" || password == "" {
+			return nil, fmt.Errorf("empty username or password: a valid username-password pair should be provided when the token is not provided")
+		}
 		s.logger.Info("token not provided, attempting to authenticate using username and password")
 		configuration := ionoscloud_auth.NewConfiguration(string(secret.Data[config.UsernameSecretKey]),
 			string(secret.Data[config.PasswordSecretKey]), "", "")
@@ -299,7 +304,11 @@ func DefaultGenerateTokenFunc(cfg *ionoscloud_auth.Configuration) (string, error
 	apiClient := ionoscloud_auth.NewAPIClient(cfg)
 	jwtToken, _, err := apiClient.TokensApi.TokensGenerate(context.Background()).Ttl(3600).Execute()
 	if err != nil {
-		return "", fmt.Errorf("failed to obtain token from ionos api: %w", err)
+		return "", fmt.Errorf("failed to obtain token from IONOS Cloud Auth API: %w", err)
+	}
+
+	if jwtToken.Token == nil || *jwtToken.Token == "" {
+		return "", fmt.Errorf("unexpected response from IONOS Cloud Auth API")
 	}
 
 	return *jwtToken.Token, nil

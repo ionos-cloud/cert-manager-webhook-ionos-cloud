@@ -33,6 +33,14 @@ var (
 		defaultUsernameSecretKey: []byte("token"),
 		defaultPasswordSecretKey: []byte("password"),
 	}
+	secretDataWithEmptyUsername = map[string][]byte{
+		defaultUsernameSecretKey: []byte(""),
+		defaultPasswordSecretKey: []byte("password"),
+	}
+	secretDataWithEmptyPassword = map[string][]byte{
+		defaultUsernameSecretKey: []byte("username"),
+		defaultPasswordSecretKey: []byte(""),
+	}
 )
 
 const testNamespace = "unit-test"
@@ -102,6 +110,34 @@ func (s *ResolverTestSuite) TestPresent() {
 			},
 			whenK8ClientError: errK8Client,
 			thenError:         "failed to create IONOS Cloud API client: failed to get secret cert-manager-webhook-ionos-cloud from namespace unit-test: k8 client error",
+		},
+		{
+			name:       "empty username error",
+			givenZones: []dnsclient.ZoneRead{},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			whenK8SecretContent:    secretDataWithEmptyUsername,
+			whenTokenGenerateError: errTokenGeneration,
+			thenError:              "failed to create IONOS Cloud API client: empty username or password: a valid username-password pair should be provided when the token is not provided",
+		},
+		{
+			name:       "empty password error",
+			givenZones: []dnsclient.ZoneRead{},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			whenK8SecretContent:    secretDataWithEmptyPassword,
+			whenTokenGenerateError: errTokenGeneration,
+			thenError:              "failed to create IONOS Cloud API client: empty username or password: a valid username-password pair should be provided when the token is not provided",
 		},
 		{
 			name:       "generate token error",
@@ -360,6 +396,34 @@ func (s *ResolverTestSuite) TestCleanUp() {
 			},
 			whenK8ClientError: errK8Client,
 			thenError:         "failed to create IONOS Cloud API client: failed to get secret cert-manager-webhook-ionos-cloud from namespace unit-test: k8 client error",
+		},
+		{
+			name:       "empty username error",
+			givenZones: []dnsclient.ZoneRead{},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			whenK8SecretContent:    secretDataWithEmptyUsername,
+			whenTokenGenerateError: errTokenGeneration,
+			thenError:              "failed to create IONOS Cloud API client: empty username or password: a valid username-password pair should be provided when the token is not provided",
+		},
+		{
+			name:       "empty password error",
+			givenZones: []dnsclient.ZoneRead{},
+			whenChallenge: &v1alpha1.ChallengeRequest{
+				UID:          "test-UID",
+				Key:          "test-key",
+				DNSName:      "*.test.com",
+				ResolvedZone: "test.com.",
+				ResolvedFQDN: "_acme-challenge.test.com.",
+			},
+			whenK8SecretContent:    secretDataWithEmptyPassword,
+			whenTokenGenerateError: errTokenGeneration,
+			thenError:              "failed to create IONOS Cloud API client: empty username or password: a valid username-password pair should be provided when the token is not provided",
 		},
 		{
 			name:       "generate token error",
