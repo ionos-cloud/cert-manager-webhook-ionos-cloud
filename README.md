@@ -239,7 +239,7 @@ Based on the operating system and the current user permissions, `sudo` may be ne
 
 ### Compatibility:
 
-The helm chart uses the latest release unless the version is explicitly set using `--set image.tag=$VERSION`. 
+The Helm chart defaults to the version defined in chart `appVersion`. You can still force a specific image tag using `--set image.tag=$VERSION --set image.override=true`.
 
 | cert-manager-webhook-ionos-cloud | cert-manager |
 |----------------------------------|--------------|

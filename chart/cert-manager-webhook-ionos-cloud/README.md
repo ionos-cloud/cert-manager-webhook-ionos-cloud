@@ -71,6 +71,7 @@ spec:
 ## Important:
 
 - Before engaging into DNS-01, cert-manager does a DNS pre-check (SOA and NS records). Depending on your environment, you may see a failure in the cert-manager logs with the following message: `error When querying the SOA record for the domain...`. To fix the issue, you need to add the following arguments to the cert-manager: `--dns01-recursive-nameservers-only`, `--dns01-recursive-nameservers=8.8.8.8:53,1.1.1.1:53`. For more details, check out the official documentation: [https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check](https://cert-manager.io/docs/configuration/acme/dns01/#setting-nameservers-for-dns01-self-check)
+- By default, the webhook image tag follows the chart `appVersion`. Set `image.tag` and `image.override=true` if you need to pin a different image tag.
 
 ## Parameters
 
@@ -78,9 +79,10 @@ spec:
 | ------------- |:-------------:| -----:|
 | certManager.namespace    | the namespace where cert-manager is deployed     |  cert-manager |
 | certManager.serviceAccountName    | the name of the cert-manager service account     |  cert-manager |
-| image.tag     | the container image tag name |   latest |
+| image.tag     | the container image tag name (`appVersion` is used by default) |   "" |
 | image.repository     | the docker image repository |   ghcr.io/ionos-cloud/cert-manager-webhook-ionos-cloud |
 | image.pullPolicy     |  The image pull policy to be used for the container image    |   IfNotPresent |
+| image.override     |  disable appVersion default and force the explicit `image.tag` value    |   false |
 | resources.limits.cpu      | The cpu limit for the container      |    |
 | resources.limits.cpu      | The cpu limit for the container      |    |
 | resources.limits.memory      | The memory limit for the container      |    |

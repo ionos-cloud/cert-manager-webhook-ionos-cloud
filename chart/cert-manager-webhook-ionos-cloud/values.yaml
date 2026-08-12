@@ -35,7 +35,7 @@ replicaCount: 1
 env: []
 
 image:
-  tag: latest
+  tag: ""
   repository: ghcr.io/ionos-cloud/cert-manager-webhook-ionos-cloud
   pullPolicy: IfNotPresent
   override: false
