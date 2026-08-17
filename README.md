@@ -186,7 +186,7 @@ make help
 
 ### Conformance tests
 
- DNS providers must run the DNS01 provider conformance testing suite, else they will have undetermined behaviour when used with cert-manager.
+ DNS providers must run the DNS01 provider conformance testing suite, else they will have undetermined behavior when used with cert-manager.
 
  The conformance tests are provided by the cert-manager test package: https://github.com/cert-manager/cert-manager/blob/master/test/acme/suite.go
 
@@ -200,7 +200,7 @@ depending on the authentication method, either:
  * IONOS_TOKEN: the token for accessing IONOS DNS API
 or :
 * IONOS_USERNAME: the username of the bot account
-* IONOS_PASSWORD: the password of the bot acccount
+* IONOS_PASSWORD: the password of the bot account
 
   
 

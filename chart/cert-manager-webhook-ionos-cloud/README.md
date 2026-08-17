@@ -1,4 +1,4 @@
-![Alt text](https://raw.githubusercontent.com/ionos-cloud/certbot-dns-ionos-cloud/main/.github/IONOS.CLOUD.BLU.svg)
+![Alt text](https://raw.githubusercontent.com/ionos-cloud/cert-manager-webhook-ionos-cloud/main/.github/IONOS.CLOUD.BLU.svg)
 
 # IONOS Cloud DNS Webhook for cert-manager
 
@@ -81,7 +81,6 @@ spec:
 | image.tag     | the container image tag name |   latest |
 | image.repository     | the docker image repository |   ghcr.io/ionos-cloud/cert-manager-webhook-ionos-cloud |
 | image.pullPolicy     |  The image pull policy to be used for the container image    |   IfNotPresent |
-| resources.limits.cpu      | The cpu limit for the container      |    |
 | resources.limits.cpu      | The cpu limit for the container      |    |
 | resources.limits.memory      | The memory limit for the container      |    |
 | resources.requests.cpu      | The requested cpu for the container       |    |
