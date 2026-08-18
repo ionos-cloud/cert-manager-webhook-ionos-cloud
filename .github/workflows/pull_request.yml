@@ -13,6 +13,7 @@ permissions:
 jobs:
   validate-chart-version:
     runs-on: ubuntu-22.04
+    environment: ci-testing
     if: ${{ github.event.pull_request.head.repo.fork == false || (github.event.pull_request.head.repo.fork == true && github.event.label.name == 'ok-to-test') }}
     steps:
       - name: Checkout Code
@@ -20,6 +21,10 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+          # needed to allow external PRs to run test workflows with pull_request_targets
+          # there is nothing unsafe here, because external PRs need an approval
+          # reference: https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
+          allow-unsafe-pr-checkout: 'true'
       - name: Check if chart files changed
         id: check-chart-changes
         run: |
@@ -62,6 +67,7 @@ jobs:
           fi
   snapshot-release:
     runs-on: ubuntu-22.04
+    environment: ci-testing
     if: ${{ github.event.pull_request.head.repo.fork == false || (github.event.pull_request.head.repo.fork == true && github.event.label.name == 'ok-to-test') }}
     env:
       REGISTRY: ghcr.io
@@ -72,6 +78,10 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
+          # needed to allow external PRs to run test workflows with pull_request_targets
+          # there is nothing unsafe here, because external PRs need a workflow that can only be set by repo maintainers
+          # reference: https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
+          allow-unsafe-pr-checkout: 'true'
       - name: Git Fetch
         run: git fetch --force --tags
       - name: Get latest non-chart tag
