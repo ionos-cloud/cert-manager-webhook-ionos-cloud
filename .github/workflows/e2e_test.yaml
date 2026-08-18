@@ -1,6 +1,6 @@
 name: e2e tests
 on:
-  pull_request:
+  pull_request_target:
 
 jobs:
     e2e-tests-using-token:
@@ -12,6 +12,12 @@ jobs:
           name: install helm
         - uses: actions/checkout@v7
           name: checkout
+          with:
+            ref: ${{ github.event.pull_request.head.sha }}
+            # needed to allow external PRs to run test workflows with pull_request_targets
+            # there is nothing unsafe here, because workflows need approval
+            # reference: https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
+            allow-unsafe-pr-checkout: 'true'
         - name: get current cert manager version
           id: get-cert-manager-version
           run: |
@@ -31,6 +37,12 @@ jobs:
           name: install helm
         - uses: actions/checkout@v7
           name: checkout
+          with:
+            ref: ${{ github.event.pull_request.head.sha }}
+            # needed to allow external PRs to run test workflows with pull_request_targets
+            # there is nothing unsafe here, because workflows need approval
+            # reference: https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
+            allow-unsafe-pr-checkout: 'true'
         - name: get current cert manager version
           id: get-cert-manager-version
           run: |
