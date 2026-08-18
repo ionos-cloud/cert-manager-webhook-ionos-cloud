@@ -1,6 +1,6 @@
 name: e2e tests
 on:
-  pull_request:
+  pull_request_target:
 
 jobs:
     e2e-tests-using-token:
@@ -12,6 +12,8 @@ jobs:
           name: install helm
         - uses: actions/checkout@v7
           name: checkout
+          with:
+            ref: ${{ github.event.pull_request.head.sha }}
         - name: get current cert manager version
           id: get-cert-manager-version
           run: |
@@ -31,6 +33,8 @@ jobs:
           name: install helm
         - uses: actions/checkout@v7
           name: checkout
+          with:
+            ref: ${{ github.event.pull_request.head.sha }}
         - name: get current cert manager version
           id: get-cert-manager-version
           run: |
