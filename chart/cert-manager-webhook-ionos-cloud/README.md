@@ -30,7 +30,7 @@ Cert-manager is a powerful Kubernetes add-on that automates the management and i
         value: "localhost,127.0.0.1,.local,.cluster.local"
     ```
 
-2. ***Initiation of IONOS Cloud Authentication Token Secret:***
+2. ***Create IONOS Cloud Authentication Token Secret:***
     See [IONOS Cloud Token management](https://docs.ionos.com/cloud/set-up-ionos-cloud/management/token-management) for how to get a token.
 
     ```bash
@@ -86,7 +86,7 @@ spec:
 | resources.requests.cpu      | The requested cpu for the container       |    |
 | resources.requests.memory      | The requested memory for the container       |    |
 | nodeSelector | The node selector for the pod |    {} |
-| tolerations | Tolerations for the pod assignment    |    {}|
+| tolerations | Tolerations for the pod assignment    |    {} |
 | affinity | Affinity for the pod     |    {} |
 | podSecurityContext | Security context for the pod (e.g. runAsNonRoot, seccompProfile) |    {} |
 | securityContext | Security context for the container (e.g. allowPrivilegeEscalation, capabilities) |    {} |

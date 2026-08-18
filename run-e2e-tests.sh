@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# This script is for testing the IONOS cert-manager webhook end to end. 
-# it deploys the chart on a Kubernetes cluster, creates an issuer,
-# a certificate and tests the certificate is issued. 
+# This script is for testing the IONOS cert-manager webhook end-to-end.
+# It deploys the chart on a Kubernetes cluster, creates an issuer,
+# a certificate and tests the certificate is issued.
 #
 # ARGUMENTS:
 #   --cert-manager-version the cert-manager version.
-#   --authentication-method the authentication method to use (token or username-password)
+#   --authentication-method the authentication method to use (token or username-password).
 # 
 # Required environment variables: TEST_ZONE_NAME
 # if --authentication-method=token, IONOS_TOKEN needs to be set
@@ -57,7 +57,7 @@ else
       echo "ERROR: --authentication-method flag is required!"
       exit 1
     else
-      echo "unknow authentication method $authentication_method"
+      echo "unknown authentication method $authentication_method"
       exit 1
     fi
 fi
@@ -109,7 +109,7 @@ kubectl create secret generic cert-manager-webhook-ionos-cloud \
   --from-literal=password="$(echo $IONOS_PASSWORD)" -n cert-manager
 fi
 
-#create the issuer
+# create the issuer
 kubectl apply -f .github/test-manifests/issuer.yaml
 
 # assert the deployment is ready
@@ -121,7 +121,7 @@ ZONE_ID=$(curl -v -H "Authorization: Bearer $IONOS_TOKEN" --json \
 "{\"properties\":{\"zoneName\":\"$PREFIX.$TEST_ZONE_NAME\",\"description\":\"used for e2e testing for cert-manager webhook\",\"enabled\":true}}" \
 https://dns.de-fra.ionos.com/zones | jq -r .id)
 
-# create certificate 
+# create certificate
 cat .github/test-manifests/certificate.tmpl.yaml | envsubst | kubectl apply -f -
 
 # assert the certificate is ready

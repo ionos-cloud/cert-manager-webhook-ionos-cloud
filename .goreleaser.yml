@@ -48,7 +48,7 @@ dockers:
     goarch: amd64
     build_flag_templates:
       - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.description=cert manager webhook ionos cloud for dns01 challenges
+      - --label=org.opencontainers.image.description=IONOS Cloud cert-manager webhook for DNS-01 challenges
       - --label=org.opencontainers.image.url=https://{{ .Env.GITHUB_SERVER_URL }}/{{ .Env.GITHUB_REPOSITORY}}
       - --label=org.opencontainers.image.source=https://{{ .Env.GITHUB_SERVER_URL }}/{{ .Env.GITHUB_REPOSITORY}}
       - --label=org.opencontainers.image.version={{ .Version }}
@@ -66,7 +66,7 @@ dockers:
     goarch: arm64
     build_flag_templates:
       - --label=org.opencontainers.image.title={{ .ProjectName }}
-      - --label=org.opencontainers.image.description=cert manager webhook ionos cloud for dns01 challenges
+      - --label=org.opencontainers.image.description=IONOS Cloud cert-manager webhook for DNS-01 challenges
       - --label=org.opencontainers.image.url=https://{{ .Env.GITHUB_SERVER_URL }}/{{ .Env.GITHUB_REPOSITORY}}
       - --label=org.opencontainers.image.source=https://{{ .Env.GITHUB_SERVER_URL }}/{{ .Env.GITHUB_REPOSITORY}}
       - --label=org.opencontainers.image.version={{ .Version }}

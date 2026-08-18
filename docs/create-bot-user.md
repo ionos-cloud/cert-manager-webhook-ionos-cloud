@@ -32,7 +32,7 @@ Navigate to https://dcd.ionos.com/ and log in with your account credentials (the
 1. Click on **+Create** button
 2. Fill in the user details:
    - **First and Last Name**: Give the user a descriptive name (e.g., `cert-manager-bot` or `webhook-automation`)
-   - **Email**: Enter an email address (can be a noreply address; it's used for login and password recovery)
+   - **Email**: Enter an email address (can be a no-reply address; it's used for login and password recovery)
    - **Password**: Generate a strong password.
 
 ![management](images/dcd_create_user.png)
@@ -69,9 +69,9 @@ After creating the group, we need to add our bot user to the group:
 1. Log in to the IONOS Datacenter Designer
 2. The user should NOT have access to:
    - Billing or invoicing
-   - User/account management
-   - Infrastructure or computing resources
-   - Other sensitive areas
+   - user/account management
+   - infrastructure or computing resources
+   - other sensitive areas
 
 
 ## Security Best Practices
