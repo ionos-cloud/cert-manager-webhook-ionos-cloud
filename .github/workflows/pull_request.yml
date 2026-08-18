@@ -2,8 +2,7 @@ name: Pull Request Go Releaser
 
 on:
   pull_request_target:
-    types: [labeled]
-  pull_request:
+    types: [opened, synchronize, labeled]
   push:
     branches:
       - main

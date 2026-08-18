@@ -1,8 +1,7 @@
 name: e2e tests
 on:
   pull_request_target:
-    types: [labeled]
-  pull_request:
+    types: [opened, synchronize, labeled]
   workflow_dispatch:
 
 jobs:
