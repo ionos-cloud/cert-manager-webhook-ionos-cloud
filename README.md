@@ -46,7 +46,7 @@ By convention, cert-manager is deployed in a namespace named `cert-manager`. The
 
 3. ***Authentication Methods***
 
-Both username/password and token authentication are supported. The username/password method has the advantage of not requiring the user to intervene periodically. If a token is used, it falls under the responsibility of the user to renew the token periodically (IONOS tokens can have a maximum ttl of 365 days). Regardless of the method used, it is highly recommended to scope the privileges to the DNS management only. This can be done by creating a new IAM user under your main contract, and scoping the privileges to "Access and manage DNS". More details on how to create a bot user can be found [here](docs/create-bot-user.md)
+Both username/password and token authentication and supported. The username/password method has the advantage of not requiring the user to intervene periodically. If a token is used, it falls under the responsibility of the user to renew the token periodically (IONOS tokens can have a maximum ttl of 365 days). Regardless of the method used, it is highly recommended to scope the privileges to the DNS management only. This can be done by creating a new IAM user under your main contract, and scoping the privileges to "Access and manage DNS". More details on how to create a bot user can be found [here](docs/create-bot-user.md)
 
 > [!IMPORTANT]  
 > It is not recommended to use the credentials of the root/Admin account. 
