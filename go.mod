@@ -1,6 +1,6 @@
 module github.com/ionos-cloud/cert-manager-webhook-ionos-cloud
 
-go 1.26.5
+go 1.26.6
 
 require (
 	github.com/cert-manager/cert-manager v1.21.1

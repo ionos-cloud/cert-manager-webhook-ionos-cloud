@@ -1,6 +1,6 @@
 [![GoTemplate](https://img.shields.io/badge/go/template-black?logo=go)](https://github.com/golang-standards/project-layout)
-[![Go](https://img.shields.io/badge/go-1.26.5-blue?logo=go)](https://golang.org/)
-[![Cert Manager](https://img.shields.io/badge/cert--manager-1.21.0-blue?logo=cert-manager)](https://cert-manager.io/)
+[![Go](https://img.shields.io/badge/go-1.26.6-blue?logo=go)](https://golang.org/)
+[![Cert Manager](https://img.shields.io/badge/cert--manager-1.21.1-blue?logo=cert-manager)](https://cert-manager.io/)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/cert-manager-webhook-ionos-cloud)](https://artifacthub.io/packages/helm/cert-manager-webhook-ionos-cloud/cert-manager-webhook-ionos-cloud)
 
 ![Alt text](.github/IONOS.CLOUD.BLU.svg?raw=true)
@@ -239,7 +239,7 @@ Based on the operating system and the current user permissions, `sudo` may be ne
 
 ### Compatibility:
 
-The Helm chart keeps `image.tag` empty by default and resolves the image tag from chart `appVersion` during release packaging (`helm package --app-version ...`).
+The Helm chart keeps `image.tag` empty by default and resolves the image tag from the chart `appVersion` during release packaging (`helm package --app-version ...`).
 
 If you install directly from source/unpackaged chart, set an explicit image tag:
 
@@ -253,7 +253,8 @@ helm upgrade --install cert-manager-webhook-ionos-cloud \
 
 | cert-manager-webhook-ionos-cloud | cert-manager |
 |----------------------------------|--------------|
-| v0.6.0                           | v1.21.0      |
+| v1.0.1                           | v1.21.1      |
+| v0.6.0,v1.0.0                    | v1.21.0      |
 | v0.5.0                           | v1.20.1      |
 | v0.4.0                           | v1.19.4      |
 | v0.3.3                           | v1.19.3      |
