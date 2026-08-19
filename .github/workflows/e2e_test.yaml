@@ -1,10 +1,14 @@
 name: e2e tests
 on:
   pull_request_target:
+    types: [opened, synchronize, labeled]
+  workflow_dispatch:
 
 jobs:
     e2e-tests-using-token:
       runs-on: ubuntu-latest
+      environment: ci-testing
+      if: ${{ github.event.pull_request.head.repo.fork == false || (github.event.pull_request.head.repo.fork == true && github.event.label.name == 'ok-to-test') }}
       steps:
         - name: Create k8s Kind Cluster
           uses: helm/kind-action@v1
@@ -15,7 +19,7 @@ jobs:
           with:
             ref: ${{ github.event.pull_request.head.sha }}
             # needed to allow external PRs to run test workflows with pull_request_targets
-            # there is nothing unsafe here, because workflows need approval
+            # there is nothing unsafe here, because external PRs need an approval
             # reference: https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
             allow-unsafe-pr-checkout: 'true'
         - name: get current cert manager version
@@ -30,6 +34,8 @@ jobs:
            ./run-e2e-tests.sh --cert-manager-version ${{ steps.get-cert-manager-version.outputs.cert_manager_version }} --authentication-method token
     e2e-tests-using-username-password:
       runs-on: ubuntu-latest
+      environment: ci-testing
+      if: ${{ github.event.pull_request.head.repo.fork == false || (github.event.pull_request.head.repo.fork == true && github.event.label.name == 'ok-to-test') }}
       steps:
         - name: Create k8s Kind Cluster
           uses: helm/kind-action@v1
@@ -40,7 +46,7 @@ jobs:
           with:
             ref: ${{ github.event.pull_request.head.sha }}
             # needed to allow external PRs to run test workflows with pull_request_targets
-            # there is nothing unsafe here, because workflows need approval
+            # there is nothing unsafe here, because external PRs need an approval
             # reference: https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
             allow-unsafe-pr-checkout: 'true'
         - name: get current cert manager version

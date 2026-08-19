@@ -16,5 +16,3 @@ type: application
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
 version: 0.3.3
-# appVersion is used as the default container image tag by the deployment template.
-appVersion: "v1.0.0"

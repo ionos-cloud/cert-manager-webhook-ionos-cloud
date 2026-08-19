@@ -91,5 +91,7 @@ spec:
 | nodeSelector | The node selector for the pod |    {} |
 | tolerations | Tolerations for the pod assignment    |    {}|
 | affinity | Affinity for the pod     |    {} |
+| podSecurityContext | Security context for the pod (e.g. runAsNonRoot, seccompProfile) |    {} |
+| securityContext | Security context for the container (e.g. allowPrivilegeEscalation, capabilities) |    {} |
 | service.port | The port exposed by the service     |    443 |
 | service.type | The type of the service that exposes the pod      |    ClusterIP |
