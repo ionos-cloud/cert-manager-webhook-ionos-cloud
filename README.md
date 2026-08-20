@@ -42,20 +42,20 @@ Before proceeding, ensure you have the following:
 
 2. ***Using a custom cert-manager namespace (optional)***:
 
-By convention, cert-manager is deployed in a namespace named `cert-manager`. The chart assumes this default and uses this value to add privileges to the cert-manager service account to enable the creation of resources of type "ionos-cloud". If you are deploying the cert-manager chart in a different namespace, you need to use the `certManager.namespace` chart value to set the name of the namespace where cert-manager is deployed. (e.g using `--set certManager.namespace=custom_namespace`)
+By convention, cert-manager is deployed in a namespace named `cert-manager`. The chart assumes this default and uses this value to add privileges to the cert-manager service account to enable the creation of resources of type "ionos-cloud". If you are deploying the cert-manager chart in a different namespace, you need to use the `certManager.namespace` chart value to set the name of the namespace where cert-manager is deployed (e.g., using `--set certManager.namespace=custom_namespace`)
 
 3. ***Authentication Methods***
 
 Both username/password and token authentication are supported. The username/password method has the advantage of not requiring the user to intervene periodically. If a token is used, it falls under the responsibility of the user to renew the token periodically (IONOS tokens can have a maximum ttl of 365 days). Regardless of the method used, it is highly recommended to scope the privileges to the DNS management only. This can be done by creating a new IAM user under your main contract, and scoping the privileges to "Access and manage DNS". More details on how to create a bot user can be found [here](docs/create-bot-user.md)
 
 > [!IMPORTANT]  
-> It is not recommended to use the credentials of the root/Admin account. 
+> It is not recommended to use the credentials of the root/admin account. 
 
 1. ***Secret Creation:***
 
 For token authentication:
 
-    See [IONOS Cloud Token management](https://docs.ionos.com/cloud/set-up-ionos-cloud/management/identity-access-management/token-manager) how to get a token.
+    See [IONOS Cloud Token management](https://docs.ionos.com/cloud/set-up-ionos-cloud/management/identity-access-management/token-manager) for how to get a token.
 
     ```bash
     kubectl create secret generic cert-manager-webhook-ionos-cloud \
@@ -186,7 +186,7 @@ make help
 
 ### Conformance tests
 
- DNS providers must run the DNS01 provider conformance testing suite, else they will have undetermined behaviour when used with cert-manager.
+ DNS providers must run the DNS01 provider conformance testing suite, else they will have undetermined behavior when used with cert-manager.
 
  The conformance tests are provided by the cert-manager test package: https://github.com/cert-manager/cert-manager/blob/master/test/acme/suite.go
 
@@ -200,7 +200,7 @@ depending on the authentication method, either:
  * IONOS_TOKEN: the token for accessing IONOS DNS API
 or :
 * IONOS_USERNAME: the username of the bot account
-* IONOS_PASSWORD: the password of the bot acccount
+* IONOS_PASSWORD: the password of the bot account
 
   
 
