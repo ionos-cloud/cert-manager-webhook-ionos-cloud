@@ -1,4 +1,4 @@
-Congrats! you have installed the cert-manager-webhook-ionos-cloud chart.
+Congrats! You have installed the cert-manager-webhook-ionos-cloud chart.
 
 The first step is creating an Issuer or ClusterIssuer.
  

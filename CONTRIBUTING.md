@@ -1,6 +1,6 @@
-# Contributing to CertManager webhook for IONOS Cloud
+# Contributing to cert-manager webhook for IONOS Cloud
 
-Thank you for considering contributing to CertManager webhook for IONOS Cloud. We appreciate your time and effort to help make this project better. To ensure a smooth collaboration, please follow the guidelines below.
+Thank you for considering contributing to cert-manager webhook for IONOS Cloud. We appreciate your time and effort to help make this project better. To ensure a smooth collaboration, please follow the guidelines below.
 
 ## Code of Conduct
 
