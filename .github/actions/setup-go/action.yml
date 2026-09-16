@@ -1,0 +1,16 @@
+name: Setup Go
+description: >-
+  Wraps actions/setup-go with this repo's go.mod-derived version, so the
+  pinned SHA and version source live in one place.
+inputs:
+  cache:
+    description: Passed through to actions/setup-go.
+    required: false
+    default: 'true'
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+      with:
+        go-version-file: 'go.mod'
+        cache: ${{ inputs.cache }}

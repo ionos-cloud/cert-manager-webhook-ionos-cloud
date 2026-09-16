@@ -47,10 +47,9 @@ jobs:
           echo "latest-release-tag=$latest_release_tag" >> "$GITHUB_OUTPUT"
           echo "Using release tag: $latest_release_tag"
       - name: Setup go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        uses: ./.github/actions/setup-go
         with:
-          go-version-file: 'go.mod'
-          cache: false
+          cache: 'false'
       - name: Run conformance tests
         env:
           TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}

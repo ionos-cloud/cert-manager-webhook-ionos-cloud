@@ -17,6 +17,12 @@ jobs:
   # --- Secret-free checks: run for every pull_request (including forks, no
   # approval needed) and for pushes to main. Nothing here touches secrets, so
   # it is safe to run unconditionally and is what gets required for merge. ---
+  #
+  # Note: the initial checkout in every job below stays a plain
+  # actions/checkout step (not the local ./.github/actions/checkout-pr
+  # composite) -- a local composite action can't be used before something
+  # has checked out the repo, so it can never be a job's first step.
+  # setup-go, which always runs after checkout, is safe to compose.
 
   validate-chart-version:
     runs-on: ubuntu-22.04
@@ -83,9 +89,7 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Setup go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
-        with:
-          go-version-file: 'go.mod'
+        uses: ./.github/actions/setup-go
       - name: Run Unit Tests
         run: make unit-test
       - name: Test Report
@@ -114,9 +118,7 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Setup go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
-        with:
-          go-version-file: 'go.mod'
+        uses: ./.github/actions/setup-go
       - name: Lint and vet
         run: make static-analysis
 
@@ -131,9 +133,7 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Setup go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
-        with:
-          go-version-file: 'go.mod'
+        uses: ./.github/actions/setup-go
       - name: Check licenses
         run: make check-licenses
 
@@ -163,9 +163,7 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Setup go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
-        with:
-          go-version-file: 'go.mod'
+        uses: ./.github/actions/setup-go
       - name: Check for generated-file drift
         run: make check-generated
 
@@ -193,9 +191,7 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Setup go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
-        with:
-          go-version-file: 'go.mod'
+        uses: ./.github/actions/setup-go
       - name: Run actionlint
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
 
@@ -227,9 +223,7 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Setup go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
-        with:
-          go-version-file: 'go.mod'
+        uses: ./.github/actions/setup-go
       - name: Run govulncheck (warning only)
         run: make govulncheck
 
