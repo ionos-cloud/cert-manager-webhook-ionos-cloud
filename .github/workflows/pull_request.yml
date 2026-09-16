@@ -3,8 +3,6 @@ name: Pull Request Go Releaser
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
-  pull_request_target:
-    types: [opened, synchronize, reopened, labeled]
   push:
     branches:
       - main
@@ -21,7 +19,6 @@ jobs:
   # it is safe to run unconditionally and is what gets required for merge. ---
 
   validate-chart-version:
-    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
@@ -75,7 +72,6 @@ jobs:
           fi
 
   unit-test:
-    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     permissions:
@@ -108,7 +104,6 @@ jobs:
           path: ./out/report.xml
 
   static-analysis:
-    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
@@ -126,7 +121,6 @@ jobs:
         run: make static-analysis
 
   licenses:
-    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
@@ -144,7 +138,6 @@ jobs:
         run: make check-licenses
 
   chart-lint:
-    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
@@ -160,7 +153,6 @@ jobs:
         run: make chart-lint
 
   generated-files:
-    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
@@ -178,7 +170,6 @@ jobs:
         run: make check-generated
 
   shellcheck:
-    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
@@ -192,7 +183,6 @@ jobs:
         uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
 
   actionlint:
-    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     permissions:
@@ -210,7 +200,6 @@ jobs:
         run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
 
   zizmor:
-    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     continue-on-error: true
@@ -227,7 +216,6 @@ jobs:
           advanced-security: false
 
   govulncheck:
-    if: github.event_name != 'pull_request_target'
     runs-on: ubuntu-22.04
     timeout-minutes: 10
     continue-on-error: true
@@ -249,7 +237,7 @@ jobs:
   # above, which always run on every pull_request (fork or not, labeled or
   # not) -- so it can't be satisfied by a job that was silently skipped.
   passed:
-    if: always() && github.event_name != 'pull_request_target'
+    if: always()
     needs:
       - validate-chart-version
       - unit-test
@@ -271,59 +259,3 @@ jobs:
           fi
         env:
           FAILED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
-
-  # --- Credential-bearing checks: only run under pull_request_target, gated
-  # by the environment's required-reviewer protection rule for forks, and
-  # never on push to main so they can't block merges to main or dependabot. ---
-
-  snapshot-release:
-    if: github.event_name == 'pull_request_target' && (github.event.pull_request.head.repo.fork == false || github.event.label.name == 'ok-to-test')
-    runs-on: ubuntu-22.04
-    environment: ci-tests
-    timeout-minutes: 30
-    permissions:
-      contents: read
-    env:
-      REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-          # needed to allow external PRs to run test workflows with pull_request_targets
-          # there is nothing unsafe here, because external PRs need an approval
-          # reference: https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
-          allow-unsafe-pr-checkout: 'true'
-      - name: Git Fetch
-        run: git fetch --force --tags
-      - name: Get latest non-chart tag
-        id: get-latest-release-tag
-        run: |
-          latest_release_tag="$(git tag --list --sort='-version:refname' | grep -v 'chart' | head -n 1)"
-          echo "latest-release-tag=$latest_release_tag" >> "$GITHUB_OUTPUT"
-          echo "Using release tag: $latest_release_tag"
-      - name: Setup go
-        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
-        with:
-          go-version-file: 'go.mod'
-          cache: false
-      - name: Run conformance tests
-        env:
-          TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
-          IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
-          IONOS_USERNAME: ${{ secrets.IONOS_USERNAME }}
-          IONOS_PASSWORD: ${{ secrets.IONOS_PASSWORD }}
-        run: |
-          make conformance-test
-      - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-      - name: Go Snapshot Release
-        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
-        with:
-          distribution: goreleaser
-          version: v2.9.0
-          args: release --snapshot --clean --skip=publish
-        env:
-          GORELEASER_CURRENT_TAG: ${{ steps.get-latest-release-tag.outputs.latest-release-tag }}

@@ -38,8 +38,14 @@ sits behind that environment's reviewer gate, every PR and every push to
 main (including dependabot) blocks on a human approval that may never come.
 
 The safe order is:
-1. Split jobs along the secret boundary (secret-free jobs run unconditionally
-   on `pull_request`; credential-bearing jobs stay on `pull_request_target`).
+1. Split jobs along the secret boundary: secret-free jobs run unconditionally
+   in `pull_request.yml` (`on: pull_request, push`); credential-bearing jobs
+   live in their own `pull_request_target`-only files (`pr_snapshot_release.yml`,
+   `e2e_test.yaml`). Don't put `pull_request` and `pull_request_target` in the
+   same workflow file — CodeQL's Actions analysis flags every checkout in a
+   file as "privileged" the moment `pull_request_target` is one of its
+   triggers, even when a job-level `if` actually restricts that job to the
+   safe event.
 2. Point only the credential-bearing jobs (`snapshot-release`, both e2e legs)
    at the `ci-tests` environment, and restrict them so they never run on
    `push` to main.

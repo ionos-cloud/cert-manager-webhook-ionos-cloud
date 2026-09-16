@@ -1,0 +1,71 @@
+name: PR Snapshot Release
+
+# Credential-bearing checks live in their own pull_request_target-only file
+# (never combined with `pull_request` in one workflow) so that GitHub's
+# security tooling doesn't have to reason about which jobs in a mixed-trigger
+# file are actually privileged -- see AGENTS.md.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, labeled]
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Gated by the ci-tests environment's required-reviewer protection rule for
+  # forks, and never on push to main so it can't block merges to main or
+  # dependabot.
+  snapshot-release:
+    if: github.event.pull_request.head.repo.fork == false || github.event.label.name == 'ok-to-test'
+    runs-on: ubuntu-22.04
+    environment: ci-tests
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_NAME: ${{ github.repository }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+          # needed to allow external PRs to run test workflows with pull_request_targets
+          # there is nothing unsafe here, because external PRs need an approval
+          # reference: https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
+          allow-unsafe-pr-checkout: 'true'
+      - name: Git Fetch
+        run: git fetch --force --tags
+      - name: Get latest non-chart tag
+        id: get-latest-release-tag
+        run: |
+          latest_release_tag="$(git tag --list --sort='-version:refname' | grep -v 'chart' | head -n 1)"
+          echo "latest-release-tag=$latest_release_tag" >> "$GITHUB_OUTPUT"
+          echo "Using release tag: $latest_release_tag"
+      - name: Setup go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
+        with:
+          go-version-file: 'go.mod'
+          cache: false
+      - name: Run conformance tests
+        env:
+          TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
+          IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
+          IONOS_USERNAME: ${{ secrets.IONOS_USERNAME }}
+          IONOS_PASSWORD: ${{ secrets.IONOS_PASSWORD }}
+        run: |
+          make conformance-test
+      - name: Set Up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - name: Go Snapshot Release
+        uses: goreleaser/goreleaser-action@f06c13b6b1a9625abc9e6e439d9c05a8f2190e94 # v7
+        with:
+          distribution: goreleaser
+          version: v2.9.0
+          args: release --snapshot --clean --skip=publish
+        env:
+          GORELEASER_CURRENT_TAG: ${{ steps.get-latest-release-tag.outputs.latest-release-tag }}
