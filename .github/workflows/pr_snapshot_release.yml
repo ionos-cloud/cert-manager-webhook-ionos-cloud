@@ -4,7 +4,7 @@ name: PR Snapshot Release
 # (never combined with `pull_request` in one workflow) so that GitHub's
 # security tooling doesn't have to reason about which jobs in a mixed-trigger
 # file are actually privileged -- see AGENTS.md.
-on:
+on: # zizmor: ignore[dangerous-triggers] mitigated: fork PRs need the ok-to-test label, the job checks head.repo.fork, and the ci-tests environment requires reviewer approval before secrets are exposed -- see AGENTS.md
   pull_request_target:
     types: [opened, synchronize, reopened, labeled]
 
