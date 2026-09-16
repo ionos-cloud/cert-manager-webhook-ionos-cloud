@@ -33,8 +33,10 @@ jobs:
             - name: Install helm chart
               uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
             - name: Package helm chart
+              env:
+                LATEST_TAG: ${{ steps.get-latest-tag.outputs.latest-tag }}
               run: |
-                helm package chart/cert-manager-webhook-ionos-cloud/ --app-version ${{ steps.get-latest-tag.outputs.latest-tag }}
+                helm package chart/cert-manager-webhook-ionos-cloud/ --app-version "$LATEST_TAG"
             - name: Create Release
               uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
               with:
@@ -47,10 +49,13 @@ jobs:
                 artifacts: >
                   *.tgz
             - name: switch to helm repo branch and create/update index.yaml
+              env:
+                CHART_VERSION: ${{ steps.get-chart-version.outputs.chart-version }}
+                LATEST_TAG: ${{ steps.get-latest-tag.outputs.latest-tag }}
               run: |
                 git checkout helm-repo
                 helm repo index . --merge index.yaml \
-                --url https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/${{ steps.get-chart-version.outputs.chart-version }}-chart+${{ steps.get-latest-tag.outputs.latest-tag }}/
+                --url "https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/${CHART_VERSION}-chart+${LATEST_TAG}/"
                 git config user.email "no-reply@ionos-cloud.com";
                 git config user.name "IONOS-CloudBot";
                 git add index.yaml
