@@ -98,7 +98,7 @@ sboms:
 
 docker_signs:
   - cmd: cosign
-    artifacts: images
+    artifacts: manifests
     output: true
     args:
       - "sign"
