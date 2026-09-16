@@ -55,9 +55,12 @@ jobs:
           echo "main-version=$main_version" >> "$GITHUB_OUTPUT"
       - name: Validate version bump
         if: steps.check-chart-changes.outputs.chart-changed == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.current-version.outputs.current-version }}
+          MAIN_VERSION: ${{ steps.main-version.outputs.main-version }}
         run: |
-          current="${{ steps.current-version.outputs.current-version }}"
-          main="${{ steps.main-version.outputs.main-version }}"
+          current="$CURRENT_VERSION"
+          main="$MAIN_VERSION"
 
           echo "Current chart version: $current"
           echo "Main branch chart version: $main"
@@ -90,7 +93,7 @@ jobs:
       - name: Run Unit Tests
         run: make unit-test
       - name: Test Report
-        uses: dorny/test-reporter@1cc81a5edf733718d4850df304aaa21c05cd7280 # v3
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
         if: success() || failure()
         with:
           name: Unit Test Results
@@ -262,11 +265,12 @@ jobs:
     steps:
       - name: Check required jobs
         run: |
-          echo '${{ toJSON(needs) }}'
-          if [ "${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}" = "true" ]; then
+          if [ "$FAILED" = "true" ]; then
             echo "One or more required jobs failed."
             exit 1
           fi
+        env:
+          FAILED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
 
   # --- Credential-bearing checks: only run under pull_request_target, gated
   # by the environment's required-reviewer protection rule for forks, and
@@ -304,6 +308,7 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: 'go.mod'
+          cache: false
       - name: Run conformance tests
         env:
           TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
