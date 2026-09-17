@@ -37,7 +37,7 @@ jobs:
                 LATEST_TAG: ${{ steps.get-latest-tag.outputs.latest-tag }}
               run: |
                 helm package chart/cert-manager-webhook-ionos-cloud/ --app-version "$LATEST_TAG"
-            - name: Create Release
+            - name: Create Release # zizmor: ignore[superfluous-actions] `allowUpdates`/`makeLatest` are not exposed by `gh release create`, and this step upserts a release across reruns
               uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
               with:
                 tag: ${{ steps.get-chart-version.outputs.chart-version }}-chart+${{ steps.get-latest-tag.outputs.latest-tag }}
