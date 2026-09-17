@@ -75,10 +75,25 @@ vet: ## Run go vet against code.
 .PHONY: static-analysis
 static-analysis: lint vet ## Run static analysis against code.
 
+.PHONY: govulncheck
+govulncheck: ## Run govulncheck (warning-only, not a merge gate).
+	$(GO_TOOL) golang.org/x/vuln/cmd/govulncheck ./...
+
 ##@ helm
 
 helm-docs: ## Generate helm documentation
 	$(GO_TOOL) github.com/norwoodj/helm-docs/cmd/helm-docs
+
+.PHONY: chart-lint
+chart-lint: ## Lint the helm chart.
+	helm lint chart/cert-manager-webhook-ionos-cloud
+
+.PHONY: generate
+generate: generate-mocks fmt ## Regenerate mocks and formatting.
+
+.PHONY: check-generated
+check-generated: generate ## Fail if generated files are out of date.
+	git diff --exit-code -- '*.go'
 
 reports:
 	@mkdir -pv "$(@)/licenses"

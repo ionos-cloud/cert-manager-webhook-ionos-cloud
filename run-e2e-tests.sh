@@ -76,7 +76,7 @@ fi
             --create-namespace \
             --set crds.enabled=true \
              --set 'extraArgs={--dns01-recursive-nameservers-only,--dns01-recursive-nameservers=8.8.8.8:53\,1.1.1.1:53}' \
-            --version $cert_manager_version
+            --version "$cert_manager_version"
 
 
 # build binary 
@@ -85,15 +85,15 @@ CGO_ENABLED=0 go build -ldflags "-s -w" -o ./cert-manager-webhook-ionos-cloud -v
 IMAGE_TAG=$(date +%N)
 
 # build docker image
-docker buildx build --platform linux/amd64 -t cert-manager-e2e-tests:$IMAGE_TAG .
+docker buildx build --platform linux/amd64 -t "cert-manager-e2e-tests:$IMAGE_TAG" .
 
 # load image into kind
-kind load docker-image cert-manager-e2e-tests:$IMAGE_TAG -n chart-testing
+kind load docker-image "cert-manager-e2e-tests:$IMAGE_TAG" -n chart-testing
 
 # install the chart
 helm install cert-manager-webhook-ionos-cloud chart/cert-manager-webhook-ionos-cloud \
     --set image.repository=cert-manager-e2e-tests \
-    --set image.tag=$IMAGE_TAG \
+    --set image.tag="$IMAGE_TAG" \
     -n cert-manager
 
 # assert the deployment is ready
@@ -102,11 +102,11 @@ kubectl wait --timeout=30s --for=condition=Available=True deployment/cert-manage
 # create the secret
 if [[ "$authentication_method" == "token" ]]; then
 kubectl create secret generic cert-manager-webhook-ionos-cloud \
-  --from-literal=auth-token="$(echo $IONOS_TOKEN)" -n cert-manager
+  --from-literal=auth-token="$IONOS_TOKEN" -n cert-manager
 else
 kubectl create secret generic cert-manager-webhook-ionos-cloud \
-  --from-literal=username="$(echo $IONOS_USERNAME)" \
-  --from-literal=password="$(echo $IONOS_PASSWORD)" -n cert-manager
+  --from-literal=username="$IONOS_USERNAME" \
+  --from-literal=password="$IONOS_PASSWORD" -n cert-manager
 fi
 
 # create the issuer
@@ -116,7 +116,8 @@ kubectl apply -f .github/test-manifests/issuer.yaml
 kubectl wait --timeout=10s --for=condition=Ready=True issuer/letsencrypt-ionos-e2e
 
 # create the test zone
-export PREFIX=$(date +%k%M%N)
+PREFIX=$(date +%k%M%N)
+export PREFIX
 ZONE_ID=$(curl -v -H "Authorization: Bearer $IONOS_TOKEN" --json \
 "{\"properties\":{\"zoneName\":\"$PREFIX.$TEST_ZONE_NAME\",\"description\":\"used for e2e testing for cert-manager webhook\",\"enabled\":true}}" \
 https://dns.de-fra.ionos.com/zones | jq -r .id)

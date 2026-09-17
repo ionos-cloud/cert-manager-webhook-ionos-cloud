@@ -165,15 +165,16 @@ The following webhook config options are available:
 
 ## Verify the image resource integrity
 
-All official webhooks provided by IONOS are signed using [Cosign](https://docs.sigstore.dev/cosign/overview/).
-The Cosign public key can be found in the [cosign.pub](./cosign.pub) file.
-
-Note: Due to the early development stage of the webhook, the image is not yet signed
-by [sigstores transparency log](https://github.com/sigstore/rekor).
+Release images published from tag `v*` builds are signed keylessly with [Cosign](https://docs.sigstore.dev/cosign/overview/)
+using GitHub Actions OIDC identity, and the signature is recorded in the
+[Rekor transparency log](https://github.com/sigstore/rekor). There is no signing key to distribute or trust.
 
 ```shell
 export RELEASE_VERSION=latest
-cosign verify --insecure-ignore-tlog --key cosign.pub ghcr.io/ionos-cloud/cert-manager-webhook-ionos-cloud:$RELEASE_VERSION
+cosign verify \
+  --certificate-identity-regexp="^https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/" \
+  --certificate-oidc-issuer="https://token.actions.githubusercontent.com" \
+  ghcr.io/ionos-cloud/cert-manager-webhook-ionos-cloud:$RELEASE_VERSION
 ```
 
 ### Development Workflow

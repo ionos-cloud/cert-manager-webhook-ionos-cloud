@@ -3,13 +3,22 @@ on:
     workflow_call:
     workflow_dispatch:
 
+permissions: {}
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: false
+
 jobs:
     deploy:
         name: deploy helm chart
         runs-on: ubuntu-latest
+        timeout-minutes: 15
+        permissions:
+            contents: write
         steps:
-            - name: Check out code
-              uses: actions/checkout@v7
+            - name: Check out code # zizmor: ignore[artipacked] the persisted credential is required: this job runs `git push origin helm-repo` later in the same job with no other auth set up
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
               with:
                 fetch-depth: 0
             - name: Fetch latest tag
@@ -22,12 +31,14 @@ jobs:
               run: |
                 echo "chart-version=$(yq '.version' chart/cert-manager-webhook-ionos-cloud/Chart.yaml)" >> "$GITHUB_OUTPUT"
             - name: Install helm chart
-              uses: azure/setup-helm@v5.0.1
+              uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
             - name: Package helm chart
+              env:
+                LATEST_TAG: ${{ steps.get-latest-tag.outputs.latest-tag }}
               run: |
-                helm package chart/cert-manager-webhook-ionos-cloud/ --app-version ${{ steps.get-latest-tag.outputs.latest-tag }}
-            - name: Create Release
-              uses: ncipollo/release-action@v1
+                helm package chart/cert-manager-webhook-ionos-cloud/ --app-version "$LATEST_TAG"
+            - name: Create Release # zizmor: ignore[superfluous-actions] `allowUpdates`/`makeLatest` are not exposed by `gh release create`, and this step upserts a release across reruns
+              uses: ncipollo/release-action@339a81892b84b4eeb0f6e744e4574d79d0d9b8dd # v1
               with:
                 tag: ${{ steps.get-chart-version.outputs.chart-version }}-chart+${{ steps.get-latest-tag.outputs.latest-tag }}
                 name: Chart version ${{ steps.get-chart-version.outputs.chart-version }} with app version ${{ steps.get-latest-tag.outputs.latest-tag }}
@@ -38,10 +49,13 @@ jobs:
                 artifacts: >
                   *.tgz
             - name: switch to helm repo branch and create/update index.yaml
+              env:
+                CHART_VERSION: ${{ steps.get-chart-version.outputs.chart-version }}
+                LATEST_TAG: ${{ steps.get-latest-tag.outputs.latest-tag }}
               run: |
                 git checkout helm-repo
                 helm repo index . --merge index.yaml \
-                --url https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/${{ steps.get-chart-version.outputs.chart-version }}-chart+${{ steps.get-latest-tag.outputs.latest-tag }}/
+                --url "https://github.com/ionos-cloud/cert-manager-webhook-ionos-cloud/releases/download/${CHART_VERSION}-chart+${LATEST_TAG}/"
                 git config user.email "no-reply@ionos-cloud.com";
                 git config user.name "IONOS-CloudBot";
                 git add index.yaml

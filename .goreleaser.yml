@@ -91,6 +91,20 @@ docker_manifests:
 checksum:
   disable: false
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
+
+sboms:
+  - id: archive
+    artifacts: archive
+
+docker_signs:
+  - cmd: cosign
+    artifacts: manifests
+    output: true
+    args:
+      - "sign"
+      - "--yes"
+      - "${artifact}@${digest}"
+
 dist: dist
 changelog:
   use: github
