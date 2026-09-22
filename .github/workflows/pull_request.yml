@@ -1,34 +1,45 @@
 name: Pull Request Go Releaser
 
 on:
-  pull_request_target:
-    types: [opened, synchronize, labeled]
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
   push:
     branches:
       - main
 
-permissions:
-  checks: write
-  
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # --- Secret-free checks: run for every pull_request (including forks, no
+  # approval needed) and for pushes to main. Nothing here touches secrets, so
+  # it is safe to run unconditionally and is what gets required for merge. ---
+  #
+  # Note: the initial checkout in every job below stays a plain
+  # actions/checkout step (not the local ./.github/actions/checkout-pr
+  # composite) -- a local composite action can't be used before something
+  # has checked out the repo, so it can never be a job's first step.
+  # setup-go, which always runs after checkout, is safe to compose.
+
   validate-chart-version:
     runs-on: ubuntu-22.04
-    environment: ci-testing
-    if: ${{ (github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.fork == false) || (github.event.pull_request.head.repo.fork == true && github.event.label.name == 'ok-to-test') }}
+    timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          persist-credentials: false
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-          # needed to allow external PRs to run test workflows with pull_request_targets
-          # there is nothing unsafe here, because external PRs need an approval
-          # reference: https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
-          allow-unsafe-pr-checkout: 'true'
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Check if chart files changed
         id: check-chart-changes
         run: |
-          git fetch origin main:main
+          git fetch origin main
           if git diff --name-only origin/main...HEAD | grep -q '^chart/'; then
             echo "chart-changed=true" >> "$GITHUB_OUTPUT"
           else
@@ -44,19 +55,20 @@ jobs:
         id: main-version
         if: steps.check-chart-changes.outputs.chart-changed == 'true'
         run: |
-          git checkout main
-          main_version=$(grep '^version:' chart/cert-manager-webhook-ionos-cloud/Chart.yaml | awk '{print $2}')
+          main_version=$(git show origin/main:chart/cert-manager-webhook-ionos-cloud/Chart.yaml | grep '^version:' | awk '{print $2}')
           echo "main-version=$main_version" >> "$GITHUB_OUTPUT"
-          git checkout -
       - name: Validate version bump
         if: steps.check-chart-changes.outputs.chart-changed == 'true'
+        env:
+          CURRENT_VERSION: ${{ steps.current-version.outputs.current-version }}
+          MAIN_VERSION: ${{ steps.main-version.outputs.main-version }}
         run: |
-          current="${{ steps.current-version.outputs.current-version }}"
-          main="${{ steps.main-version.outputs.main-version }}"
-          
+          current="$CURRENT_VERSION"
+          main="$MAIN_VERSION"
+
           echo "Current chart version: $current"
           echo "Main branch chart version: $main"
-          
+
           if [ "$current" = "$main" ]; then
             echo "❌ Chart files were modified but chart version was not bumped!"
             echo "Please increment the version in chart/cert-manager-webhook-ionos-cloud/Chart.yaml"
@@ -65,39 +77,25 @@ jobs:
           else
             echo "✅ Chart version was properly bumped from $main to $current"
           fi
-  snapshot-release:
+
+  unit-test:
     runs-on: ubuntu-22.04
-    environment: ci-testing
-    if: ${{ github.event.pull_request.head.repo.fork == false || (github.event.pull_request.head.repo.fork == true && github.event.label.name == 'ok-to-test') }}
-    env:
-      REGISTRY: ghcr.io
-      IMAGE_NAME: ${{ github.repository }}
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      checks: write
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-          # needed to allow external PRs to run test workflows with pull_request_targets
-          # there is nothing unsafe here, because external PRs need a workflow that can only be set by repo maintainers
-          # reference: https://docs.github.com/en/actions/reference/security/securely-using-pull_request_target
-          allow-unsafe-pr-checkout: 'true'
-      - name: Git Fetch
-        run: git fetch --force --tags
-      - name: Get latest non-chart tag
-        id: get-latest-release-tag
-        run: |
-          latest_release_tag="$(git tag --list --sort='-version:refname' | grep -v 'chart' | head -n 1)"
-          echo "latest-release-tag=$latest_release_tag" >> "$GITHUB_OUTPUT"
-          echo "Using release tag: $latest_release_tag"
+          persist-credentials: false
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
       - name: Setup go
-        uses: actions/setup-go@v7
-        with:
-          go-version-file: 'go.mod'
+        uses: ./.github/actions/setup-go
       - name: Run Unit Tests
         run: make unit-test
       - name: Test Report
-        uses: dorny/test-reporter@v3
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3
         if: success() || failure()
         with:
           name: Unit Test Results
@@ -106,29 +104,162 @@ jobs:
           fail-on-error: 'true'
       - name: Upload Reports
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: unit-test-reports
           path: ./out/report.xml
 
-      - name: Run conformance tests
-        env:
-          TEST_ZONE_NAME: ${{ secrets.TEST_ZONE_NAME }}
-          IONOS_TOKEN: ${{ secrets.IONOS_TOKEN }}
-          IONOS_USERNAME: ${{ secrets.IONOS_USERNAME }}
-          IONOS_PASSWORD: ${{ secrets.IONOS_PASSWORD }}
-        run: |
-          make conformance-test
-
-      - name: Set Up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Go Snapshot Release
-        if: github.event_name == 'pull_request_target'
-        uses: goreleaser/goreleaser-action@v7
+  static-analysis:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          distribution: goreleaser
-          version: v2.9.0
-          args: release --snapshot --clean --skip=publish
+          persist-credentials: false
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Setup go
+        uses: ./.github/actions/setup-go
+      - name: Lint and vet
+        run: make static-analysis
+
+  licenses:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Setup go
+        uses: ./.github/actions/setup-go
+      - name: Check licenses
+        run: make check-licenses
+
+  chart-lint:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Install helm
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+      - name: Lint chart
+        run: make chart-lint
+
+  generated-files:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Setup go
+        uses: ./.github/actions/setup-go
+      - name: Check for generated-file drift
+        run: make check-generated
+
+  shellcheck:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Shellcheck
+        uses: ludeeus/action-shellcheck@00cae500b08a931fb5698e11e79bfbd38e612a38 # 2.0.0
+
+  actionlint:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Setup go
+        uses: ./.github/actions/setup-go
+      - name: Run actionlint
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+
+  zizmor:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Run zizmor
+        uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
+        with:
+          advanced-security: false
+
+  govulncheck:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+      - name: Setup go
+        uses: ./.github/actions/setup-go
+      - name: Run govulncheck (warning only)
+        run: make govulncheck
+
+  # Single required status check. It only depends on the secret-free jobs
+  # above, which always run on every pull_request (fork or not, labeled or
+  # not) -- so it can't be satisfied by a job that was silently skipped.
+  passed:
+    if: always()
+    needs:
+      - validate-chart-version
+      - unit-test
+      - static-analysis
+      - licenses
+      - chart-lint
+      - generated-files
+      - shellcheck
+      - actionlint
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Check required jobs
+        run: |
+          if [ "$FAILED" = "true" ]; then
+            echo "One or more required jobs failed."
+            exit 1
+          fi
         env:
-          GORELEASER_CURRENT_TAG: ${{ steps.get-latest-release-tag.outputs.latest-release-tag }}
+          FAILED: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
