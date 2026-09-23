@@ -30,7 +30,13 @@ jobs:
               id: get-latest-tag
               run: |
                 git fetch --tags
-                echo "latest-tag=$(git tag --list --sort='-*authordate' | tail -n 1)" >> "$GITHUB_OUTPUT"
+                # version:refname sorts by semver rather than tag authordate: authordate
+                # only works for annotated tags (via the `*` dereference), so it silently
+                # sorted every lightweight release tag as the oldest possible date and
+                # picked among them by refname tie-break -- it broke the moment a release
+                # tag was created as an annotated tag instead. Mirrors the same
+                # non-chart-tag selection already used in pr_snapshot_release.yml.
+                echo "latest-tag=$(git tag --list --sort='-version:refname' | grep -v 'chart' | head -n 1)" >> "$GITHUB_OUTPUT"
             - name: Get Helm Chart version
               id: get-chart-version
               run: |
