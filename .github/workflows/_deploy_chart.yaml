@@ -6,7 +6,12 @@ on:
 permissions: {}
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.ref }}
+    # A literal group name (not `${{ github.workflow }}`) so this reusable
+    # workflow's group never collides with the caller's own concurrency
+    # group when invoked via `uses:` -- github.workflow there resolves to
+    # the CALLER's name, and a matching group deadlocks the run (the caller
+    # is already holding that lock for its full duration).
+    group: deploy-helm-chart-${{ github.ref }}
     cancel-in-progress: false
 
 jobs:
