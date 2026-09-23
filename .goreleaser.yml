@@ -88,6 +88,9 @@ docker_manifests:
       - "{{ .Env.REGISTRY }}/{{ .Env.IMAGE_NAME }}:{{ .Tag }}-amd64"
       - "{{ .Env.REGISTRY }}/{{ .Env.IMAGE_NAME }}:{{ .Tag }}-arm64"
 
+release:
+  replace_existing_artifacts: true
+
 checksum:
   disable: false
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
