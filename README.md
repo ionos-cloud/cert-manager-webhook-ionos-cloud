@@ -1,6 +1,6 @@
 [![GoTemplate](https://img.shields.io/badge/go/template-black?logo=go)](https://github.com/golang-standards/project-layout)
 [![Go](https://img.shields.io/badge/go-1.27.1-blue?logo=go)](https://golang.org/)
-[![Cert Manager](https://img.shields.io/badge/cert--manager-1.21.1-blue?logo=cert-manager)](https://cert-manager.io/)
+[![Cert Manager](https://img.shields.io/badge/cert--manager-1.21.2-blue?logo=cert-manager)](https://cert-manager.io/)
 [![Artifact Hub](https://img.shields.io/endpoint?url=https://artifacthub.io/badge/repository/cert-manager-webhook-ionos-cloud)](https://artifacthub.io/packages/helm/cert-manager-webhook-ionos-cloud/cert-manager-webhook-ionos-cloud)
 
 ![Alt text](.github/IONOS.CLOUD.BLU.svg?raw=true)
@@ -254,6 +254,7 @@ helm upgrade --install cert-manager-webhook-ionos-cloud \
 
 | cert-manager-webhook-ionos-cloud | cert-manager |
 |----------------------------------|--------------|
+| v1.0.3,v1.0.4,v1.0.5                           | v1.21.2      |
 | v1.0.1,v1.0.2                           | v1.21.1      |
 | v0.6.0,v1.0.0                    | v1.21.0      |
 | v0.5.0                           | v1.20.1      |
