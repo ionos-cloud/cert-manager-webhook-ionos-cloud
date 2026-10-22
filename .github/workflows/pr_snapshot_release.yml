@@ -48,7 +48,7 @@ jobs:
           echo "latest-release-tag=$latest_release_tag" >> "$GITHUB_OUTPUT"
           echo "Using release tag: $latest_release_tag"
       - name: Setup go
-        uses: ./.github/actions/setup-go
+        uses: $/.github/actions/setup-go
         with:
           cache: 'false'
       - name: Run conformance tests
