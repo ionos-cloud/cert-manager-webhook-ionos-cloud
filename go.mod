@@ -3,7 +3,7 @@ module github.com/ionos-cloud/cert-manager-webhook-ionos-cloud
 go 1.27.3
 
 require (
-	github.com/cert-manager/cert-manager v1.21.2
+	github.com/cert-manager/cert-manager v1.21.3
 	github.com/ionos-cloud/sdk-go-auth v1.0.10
 	github.com/ionos-cloud/sdk-go-dns v1.4.0
 	github.com/stretchr/testify v1.12.1
