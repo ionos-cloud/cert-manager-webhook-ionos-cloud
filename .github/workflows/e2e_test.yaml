@@ -20,8 +20,8 @@ jobs:
       if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.fork == false || github.event.label.name == 'ok-to-test' }}
       steps:
         - name: Create k8s Kind Cluster
-          uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
-        - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+          uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376 # v1.15.2
+        - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
           name: install helm
         - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
           name: checkout
@@ -52,8 +52,8 @@ jobs:
       if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.fork == false || github.event.label.name == 'ok-to-test' }}
       steps:
         - name: Create k8s Kind Cluster
-          uses: helm/kind-action@1544676c07bb3570fcb70166beaa07c4528fd4aa # v1.15.1
-        - uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5.0.1
+          uses: helm/kind-action@ea822c7bf1874f08e5a491df991c228edffc3376 # v1.15.2
+        - uses: azure/setup-helm@2f5e7bc67f1f9972ab16657bb795f36d8f04de0e # v5.1.0
           name: install helm
         - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
           name: checkout
